@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    color: #e5e5e5;
+    background-color: #1a1a1a;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 150px,
+      rgba(0, 0, 0, 0.4) 150px,
+      rgba(0, 0, 0, 0.4) 152px
+    ),
+    radial-gradient(circle at center, #2a2a2a 0%, #111111 100%);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(193, 17, 17, 0.15);
+  }
+
+  .nav-link-underline {
+    position: relative;
+  }
+
+  .nav-link-underline::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background: #e51a1a;
+    transition: width 0.3s ease;
+  }
+
+  .nav-link-underline:hover::after,
+  .nav-link-underline.active::after {
+    width: 100%;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #e51a1a 0%, #ff6b6b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .fire-border {
+    border-image: linear-gradient(135deg, #c11111, #ff6b6b) 1;
+  }
+
+  .section-divider {
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(135deg, #c11111 0%, #ff6b6b 100%);
+    border-radius: 2px;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c11111;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9f1212;
+}
+
+/* Hero particle overlay */
+.hero-overlay {
+  background: radial-gradient(ellipse at 20% 50%, rgba(229, 26, 26, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+              linear-gradient(180deg, rgba(15, 0, 0, 0.92) 0%, rgba(26, 0, 0, 0.85) 100%);
+}
+
+/* Floating animation for stats */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-anim {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Progress bar animation */
+@keyframes progressFill {
+  from { width: 0%; }
+  to { width: var(--progress); }
+}
+
+.progress-bar {
+  animation: progressFill 1.5s ease-out forwards;
+}
