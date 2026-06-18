@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -26,6 +26,24 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Orbitron', sans-serif;
+  }
+
+  /* Improve readability for body/small text on home pages */
+  p, 
+  label, 
+  input, 
+  textarea, 
+  select,
+  .text-xs:not(.font-heading),
+  .text-sm:not(.font-heading),
+  .text-base:not(.font-heading) {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Admin Theme: override everything to use the Inter font for perfect readability */
+  .admin-theme,
+  .admin-theme * {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   }
 }
 

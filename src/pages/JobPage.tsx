@@ -53,7 +53,7 @@ export default function JobPage() {
 
   if (isAuthorized === null) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center admin-theme">
         <div className="text-center">
           <Loader className="w-8 h-8 text-flame-700 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Verifying access...</p>
@@ -64,7 +64,7 @@ export default function JobPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4 admin-theme">
         <div className="w-full max-w-md text-center">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
@@ -87,7 +87,7 @@ export default function JobPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 admin-theme">
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

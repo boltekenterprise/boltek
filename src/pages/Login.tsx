@@ -35,7 +35,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 admin-theme">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="w-16 h-16 bg-flame-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
           <span className="text-white font-heading font-black text-2xl">BK</span>
