@@ -98,7 +98,7 @@ export default function Trainings() {
                     <div key={t.id || i} className="group relative bg-white border border-burgundy/10 overflow-hidden shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-xl transition-all duration-300">
                       <div className="h-56 overflow-hidden relative bg-stone-100">
                         {displayImg ? (
-                          <img src={displayImg} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                          <img src={displayImg} alt={t.title} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Image</div>
                         )}

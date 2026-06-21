@@ -305,7 +305,7 @@ export default function Portfolio() {
                 (e.currentTarget as HTMLElement).style.color      = '#6B1724';
               }}
             >
-              View All Details <ArrowRight className="w-4 h-4" />
+              Explore Full Portfolio <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         ) : (

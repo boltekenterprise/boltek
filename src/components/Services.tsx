@@ -130,7 +130,7 @@ export default function Services() {
                 (e.currentTarget as HTMLElement).style.color      = '#6B1724';
               }}
             >
-              View All Details <ArrowRight className="w-4 h-4" />
+              Explore All Services <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         )}
