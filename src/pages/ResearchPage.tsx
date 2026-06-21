@@ -3,7 +3,7 @@ import Footer from '../components/Footer';
 
 export default function ResearchPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-ivory flex flex-col">
       <Navbar />
       <main className="flex-grow pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

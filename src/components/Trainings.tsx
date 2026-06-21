@@ -1,215 +1,194 @@
 import { useEffect, useRef, useState } from 'react';
-import { Users, ClipboardList, Zap, GraduationCap, Calendar, Building2, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { PlayCircle, BookOpen, Share2, Calendar, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
-const trainingTypes = [
-  {
-    icon: Zap,
-    title: 'Fire Emergency Response',
-    description:
-      'Prepare teams for real-world fire emergencies with customized, scenario-based training sessions.',
-    ideal: 'Offices, Hotels, Hospitals',
-  },
-  {
-    icon: GraduationCap,
-    title: 'Fire Safety Awareness',
-    description:
-      'Foundational fire safety knowledge covering hazards, battery fires, home safety, and prevention techniques.',
-    ideal: 'Schools, Communities, Institutions',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Evacuation Drills',
-    description:
-      'Planned and executed evacuation drills with debrief sessions to identify gaps and improve response times.',
-    ideal: 'Government Buildings, Co-working Spaces',
-  },
-  {
-    icon: Users,
-    title: 'Capacity Building Programs',
-    description:
-      'Multi-day training programs for engineers, safety officers, and community leaders on fire protection systems.',
-    ideal: 'Engineering Firms, Municipalities',
-  },
-];
-
-const pastTrainings = [
-  {
-    title: 'Fire Safety Training',
-    client: 'Robotics Club @ Pulchowk Campus',
-    date: 'December 2025',
-    icon: GraduationCap,
-  },
-  {
-    title: 'Fire Safety Training',
-    client: 'Agni Group — Mahindra Showroom Tangal',
-    date: 'August 2025',
-    icon: Building2,
-  },
-  {
-    title: 'Fire Drill & Safety Training',
-    client: 'Tarakeshwor Municipality Office',
-    date: 'March 2025',
-    icon: Users,
-  },
-  {
-    title: 'Fire Safety Training',
-    client: 'Chilime Building, Dhumbarahi',
-    date: 'February 2025',
-    icon: Building2,
-  },
-];
+interface TrainingProject {
+  id: string;
+  title: string;
+  client: string;
+  date: string;
+  image: string;
+  images?: string[];
+}
 
 export default function Trainings() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [bgUrl, setBgUrl] = useState('https://images.pexels.com/photos/6195129/pexels-photo-6195129.jpeg?auto=compress&cs=tinysrgb&w=1600');
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  const [pastTrainings, setPastTrainings] = useState<TrainingProject[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBg = async () => {
+    const fetchTrainings = async () => {
       try {
-        const docRef = doc(db, 'site_settings', 'backgrounds');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().trainings) {
-          setBgUrl(docSnap.data().trainings);
-        }
+        const q = query(
+          collection(db, 'portfolio_projects'),
+          where('category', '==', 'training')
+        );
+        const snap = await getDocs(q);
+        // Map and sort in memory if needed, or rely on simple query
+        const fetched = snap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        })) as TrainingProject[];
+        
+        // Sort by newest first (assuming string dates or just reverse order)
+        setPastTrainings(fetched.slice(0, 3)); // show top 3 on homepage
       } catch (err) {
-        console.error('Error fetching bg:', err);
+        console.error('Error fetching trainings:', err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchBg();
+    fetchTrainings();
   }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add('visible');
-        });
-      },
+      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible')),
       { threshold: 0.1 }
     );
-    const els = sectionRef.current?.querySelectorAll('.animate-on-scroll');
-    els?.forEach((el) => observer.observe(el));
+    sectionRef.current?.querySelectorAll('.animate-on-scroll').forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
   return (
-    <section
-      id="trainings"
-      ref={sectionRef}
-      className="min-h-screen flex flex-col justify-center text-white relative py-16"
-      style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
-    >
-      {/* Deep red-dark overlay */}
-      <div className="absolute inset-0 bg-[#1a0000]/90" />
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 animate-on-scroll">
-          <div className="text-left">
-            <span className="text-[#f83939] text-xs font-bold uppercase tracking-[0.2em] font-heading">
-              Executive Safety Programs
+    <section id="education" ref={sectionRef} className="min-h-screen py-20 bg-transparent text-stone-900 border-t border-burgundy/10">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
+            <span className="text-[#6B1724] text-xs font-bold uppercase tracking-[0.2em] font-heading">
+              Knowledge & Preparedness
             </span>
-            <h2 className="font-heading font-black text-3xl sm:text-4xl text-white mt-2 mb-3 leading-tight">
-              Cultivating Elite <span className="text-[#f83939]">Preparedness</span>
+            <h2 className="font-heading font-black text-4xl sm:text-5xl text-stone-900 mt-3 mb-5 leading-[1.15]">
+              Education &amp; <span className="text-[#6B1724]">Resources</span>
             </h2>
-            <div className="section-divider mb-3" />
-            <p className="text-gray-300 max-w-2xl text-base font-light leading-relaxed">
-              We deliver executive-tier fire safety programs, advanced evacuation protocols, and elite tactical drills for enterprise teams, corporate staff, and institutions across Nepal.
+            <div className="section-divider mx-auto mb-5" />
+            <p className="text-stone-600 text-base leading-relaxed font-light">
+              Empowering communities and corporations through elite fire safety training, comprehensive educational resources, and proactive awareness programs.
             </p>
           </div>
-          <Link
-            to="/trainings"
-            className="group flex items-center gap-2 text-sm font-semibold text-flame-700 hover:text-flame-800 transition-colors whitespace-nowrap"
-          >
-            View All Trainings <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
 
-        <div className="grid lg:grid-cols-5 gap-10">
-          {/* Training types */}
-          <div className="lg:col-span-3 space-y-5">
-            <h3 className="font-heading font-bold text-xl text-white mb-6 animate-on-scroll">
-              Training Programs We Offer
-            </h3>
-            {trainingTypes.map((type, i) => {
-              const Icon = type.icon;
-              return (
-                <div
-                  key={i}
-                  className="animate-on-scroll flex gap-4 p-5 bg-[#1a1a1a]/60 rounded-none border border-white/5 hover:border-[#f83939] transition-all duration-300 group"
-                  style={{ transitionDelay: `${i * 80}ms` }}
-                >
-                  <div className="w-12 h-12 bg-transparent rounded-none flex items-center justify-center flex-shrink-0 transition-colors">
-                    <Icon className="w-8 h-8 text-[#f83939]" />
+          {/* Main Focus: Fire Safety Training Portfolio (Hidden on Homepage) */}
+          {!isHomePage && (
+            <div className="mb-20 animate-on-scroll">
+              <div className="flex items-center justify-between mb-8 border-b border-burgundy/10 pb-4">
+                <h3 className="font-heading font-bold text-2xl text-stone-900 flex items-center gap-3">
+                  <ShieldAlert className="w-8 h-8 text-[#ED2100]" />
+                  Elite Fire Safety Training
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {loading ? (
+                  <div className="col-span-3 text-center py-10">
+                    <div className="inline-block w-6 h-6 border-2 border-t-transparent border-[#ED2100] rounded-full animate-spin mb-2" />
+                    <p className="text-sm text-stone-500">Loading recent trainings...</p>
                   </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-white mb-1">{type.title}</h4>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-2">{type.description}</p>
-                    <span className="text-xs text-[#f83939] font-medium">
-                      Ideal for: {type.ideal}
-                    </span>
+                ) : pastTrainings.length === 0 ? (
+                  <div className="col-span-3 text-center py-10 bg-white border border-burgundy/10">
+                    <p className="text-sm text-stone-500">No training sessions uploaded yet.</p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Past trainings + CTA */}
-          <div className="lg:col-span-2 space-y-5">
-            <div className="animate-on-scroll bg-[#1a1a1a]/60 border border-white/5 rounded-none p-6">
-              <h3 className="font-heading font-bold text-xl text-white mb-5">
-                Recent Trainings
-              </h3>
-              <div className="space-y-4">
-                {pastTrainings.map((t, i) => {
-                  const Icon = t.icon;
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 pb-4 border-b border-white/10 last:border-0 last:pb-0"
-                    >
-                      <div className="w-9 h-9 bg-transparent rounded-none flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-6 h-6 text-[#f83939]" />
-                      </div>
-                      <div>
-                        <p className="text-white text-sm font-semibold leading-tight">
-                          {t.title}
-                        </p>
-                        <p className="text-gray-400 text-xs mt-0.5">{t.client}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Calendar className="w-3 h-3 text-gray-500" />
-                          <span className="text-gray-500 text-xs">{t.date}</span>
+                ) : (
+                  pastTrainings.map((t, i) => {
+                    const displayImg = t.images && t.images.length > 0 ? t.images[0] : t.image;
+                    return (
+                    <div key={t.id || i} className="group relative bg-white border border-burgundy/10 overflow-hidden shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-xl transition-all duration-300">
+                      <div className="h-56 overflow-hidden relative bg-stone-100">
+                        {displayImg ? (
+                          <img src={displayImg} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Image</div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#ED2100] bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-2">
+                            <Calendar className="w-3 h-3" /> {t.date}
+                          </p>
+                          <h4 className="font-heading font-bold text-lg leading-tight drop-shadow-md text-white line-clamp-2">{t.title}</h4>
                         </div>
                       </div>
+                      <div className="p-5 bg-white border-t border-burgundy/5">
+                        <p className="text-sm text-stone-600 font-medium flex items-center justify-between">
+                          <span className="truncate pr-4">{t.client}</span>
+                          <ArrowRight className="w-4 h-4 text-[#6B1724] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                        </p>
+                      </div>
                     </div>
-                  );
-                })}
+                  )})
+                )}
               </div>
             </div>
+          )}
 
-            {/* CTA Card */}
-            <div className="animate-on-scroll bg-[#f83939] rounded-none p-6 text-white text-center">
-              <h4 className="font-heading font-bold text-xl mb-2 uppercase">
-                Book a Training
-              </h4>
-              <p className="text-white/90 text-sm mb-6 leading-relaxed">
-                Customized fire safety training programs for your organization — delivered
-                on-site anywhere in Nepal.
+          {/* Resources Grid (Blogs, Videos, Social) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-on-scroll">
+            {/* Blogs */}
+            <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
+              <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
+                <BookOpen className="w-7 h-7" />
+              </div>
+              <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Safety Blogs & Articles</h4>
+              <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+                In-depth guides on NFPA compliance, fire hazard mitigation, and the latest in fire suppression technology.
               </p>
-              <button
-                onClick={() =>
-                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-                }
-                className="w-full bg-[#1a1a1a] text-white font-bold font-heading py-3 rounded-none text-sm hover:bg-black transition-colors"
-              >
-                SCHEDULE NOW
-              </button>
+              <a href="#" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                Read Articles <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+
+            {/* Videos */}
+            <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
+              <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
+                <PlayCircle className="w-7 h-7" />
+              </div>
+              <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Video Resources</h4>
+              <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+                Visual tutorials on operating fire extinguishers, system maintenance, and proper evacuation protocols.
+              </p>
+              <a href="#" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                Watch Videos <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+
+            {/* Social Awareness */}
+            <div className="bg-[#6B1724] p-8 shadow-md hover:shadow-lg transition-shadow group text-white">
+              <div className="w-14 h-14 bg-white/10 flex items-center justify-center mb-6 text-white group-hover:bg-white group-hover:text-[#6B1724] transition-colors">
+                <Share2 className="w-7 h-7" />
+              </div>
+              <h4 className="font-heading font-bold text-xl mb-3">Social Awareness</h4>
+              <p className="text-sm text-white/80 mb-6 leading-relaxed">
+                Join our community campaigns. Share life-saving tips, drill updates, and community safety initiatives.
+              </p>
+              <a href="#" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
+                Join Campaign <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+              </a>
             </div>
           </div>
-        </div>
-      </div>
+
+          {/* View All Details Button */}
+          {location.pathname === '/' && (
+            <div className="text-center mt-16 animate-on-scroll">
+              <Link
+                to="/education"
+                className="inline-flex items-center justify-center gap-2 font-bold font-heading px-8 py-3.5 text-xs tracking-wider uppercase border transition-all duration-200 hover:scale-105 shadow-md hover:shadow-xl bg-white"
+                style={{ color: '#6B1724', borderColor: '#6B1724' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = '#6B1724';
+                  (e.currentTarget as HTMLElement).style.color      = '#fff';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = '#fff';
+                  (e.currentTarget as HTMLElement).style.color      = '#6B1724';
+                }}
+              >
+                Explore Full Education Hub <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+       </div>
     </section>
   );
 }

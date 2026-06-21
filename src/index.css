@@ -1,85 +1,104 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BRAND COLOR TOKENS
+   Soft Ivory  #FAF9F6  — primary background (70%)
+   Burgundy    #6B1724  — borders, footers, headers, cards (20%)
+   Scarlet     #ED2100  — primary CTA, underlines, active accents (10%)
+   Black/Ink   #111111  — headings and text
+ ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ivory:    #FAF9F6;
+  --burgundy: #6B1724;
+  --scarlet:  #ED2100;
+  --ink:      #111111;
+  --ash:      #FAF9F6;
+  --white:    #FFFFFF;
+
+  /* Backward compat maps */
+  --cherry:   var(--burgundy);
+  --crimson:  #4B0F19;
+
+  /* Derived tints */
+  --scarlet-10: rgba(237, 33, 0, 0.10);
+  --scarlet-20: rgba(237, 33, 0, 0.20);
+  --cherry-10:  rgba(107, 23, 36, 0.10);
+  --crimson-20: rgba(75, 15, 25, 0.20);
+}
 
 @layer base {
   * {
     scroll-behavior: smooth;
   }
 
-  body {
-    font-family: 'Rajdhani', sans-serif;
-    color: #e5e5e5;
-    background-color: #1a1a1a;
-    background-image: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 150px,
-      rgba(0, 0, 0, 0.4) 150px,
-      rgba(0, 0, 0, 0.4) 152px
-    ),
-    radial-gradient(circle at center, #2a2a2a 0%, #111111 100%);
+  html, body {
+    background-color: var(--ivory);
+    color: var(--ink);
     overflow-x: hidden;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 150px,
+        rgba(107, 23, 36, 0.02) 150px,
+        rgba(107, 23, 36, 0.02) 152px
+      ),
+      radial-gradient(circle at center, #FAF9F6 0%, #F5F2EB 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Orbitron', sans-serif;
   }
 
-  /* Improve readability for body/small text on home pages */
-  p, 
-  label, 
-  input, 
-  textarea, 
-  select,
-  .text-xs:not(.font-heading),
-  .text-sm:not(.font-heading),
-  .text-base:not(.font-heading) {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-
-  /* Admin Theme: override everything to use the Inter font for perfect readability */
+  /* Admin: force Inter for perfect readability */
   .admin-theme,
   .admin-theme * {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: var(--cherry); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scarlet); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────────────────────────────────────── */
 @layer utilities {
-  .text-shadow {
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  }
 
-  .text-shadow-lg {
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  }
+  /* Text shadow */
+  .text-shadow    { text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .text-shadow-lg { text-shadow: 0 4px 16px rgba(0,0,0,0.6); }
 
+  /* Scroll-reveal */
   .animate-on-scroll {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(28px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
   }
-
   .animate-on-scroll.visible {
     opacity: 1;
     transform: translateY(0);
   }
 
-  .card-hover {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
+  /* Card hover lift */
+  .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
   .card-hover:hover {
     transform: translateY(-6px);
-    box-shadow: 0 20px 40px rgba(193, 17, 17, 0.15);
+    box-shadow: 0 20px 40px rgba(107,23,36,0.12);
   }
 
-  .nav-link-underline {
-    position: relative;
-  }
-
+  /* ── NAV underline — uses Scarlet ──────────────────────────────────────── */
+  .nav-link-underline { position: relative; }
   .nav-link-underline::after {
     content: '';
     position: absolute;
@@ -87,87 +106,115 @@
     height: 2px;
     bottom: -4px;
     left: 0;
-    background: #e51a1a;
+    background: var(--scarlet);
     transition: width 0.3s ease;
   }
-
   .nav-link-underline:hover::after,
-  .nav-link-underline.active::after {
-    width: 100%;
-  }
+  .nav-link-underline.active::after { width: 100%; }
 
+  /* ── Gradient text — Burgundy → Crimson ──────────────────────────────────── */
   .gradient-text {
-    background: linear-gradient(135deg, #e51a1a 0%, #ff6b6b 100%);
+    background: linear-gradient(135deg, var(--burgundy) 0%, var(--crimson) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .fire-border {
-    border-image: linear-gradient(135deg, #c11111, #ff6b6b) 1;
-  }
-
+  /* ── Section divider bar — Crimson → Burgundy ────────────────────────────── */
   .section-divider {
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(135deg, #c11111 0%, #ff6b6b 100%);
+    width: 56px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--crimson) 0%, var(--burgundy) 100%);
     border-radius: 2px;
   }
+
+  /* ── Fire border ────────────────────────────────────────────────────────── */
+  .fire-border {
+    border-image: linear-gradient(135deg, var(--crimson), var(--burgundy)) 1;
+  }
+
+  /* ── Accent dot ─────────────────────────────────────────────────────────── */
+  .accent-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--scarlet);
+  }
+
+  /* ── Button presets ─────────────────────────────────────────────────────── */
+  .btn-scarlet {
+    background: var(--scarlet);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .btn-scarlet:hover {
+    background: var(--cherry);
+    box-shadow: 0 8px 24px rgba(237,33,0,0.35);
+  }
+
+  .btn-cherry {
+    background: var(--cherry);
+    color: #fff;
+    font-weight: 700;
+    transition: background 0.2s;
+  }
+  .btn-cherry:hover { background: var(--crimson); }
+
+  .btn-outline-scarlet {
+    border: 2px solid var(--scarlet);
+    color: var(--scarlet);
+    font-weight: 700;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-outline-scarlet:hover {
+    background: var(--scarlet);
+    color: #fff;
+  }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
+/* ─────────────────────────────────────────────────────────────────────────────
+   COMPONENT HELPERS
+───────────────────────────────────────────────────────────────────────────── */
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c11111;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #9f1212;
-}
-
-/* Hero particle overlay */
+/* Hero radial tint — Burgundy centre */
 .hero-overlay {
-  background: radial-gradient(ellipse at 20% 50%, rgba(229, 26, 26, 0.15) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
-              linear-gradient(180deg, rgba(15, 0, 0, 0.92) 0%, rgba(26, 0, 0, 0.85) 100%);
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(107,23,36,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(107,23,36,0.04) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(250,249,246,0.95) 0%, rgba(245,242,235,0.92) 100%);
 }
 
-/* Floating animation for stats */
+/* ─────────────────────────────────────────────────────────────────────────────
+   KEYFRAME ANIMATIONS
+───────────────────────────────────────────────────────────────────────────── */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
 }
+.float-anim { animation: float 4s ease-in-out infinite; }
 
-.float-anim {
-  animation: float 4s ease-in-out infinite;
-}
-
-/* Shimmer effect */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
-
 .shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 2.4s infinite;
 }
 
-/* Progress bar animation */
 @keyframes progressFill {
   from { width: 0%; }
-  to { width: var(--progress); }
+  to   { width: var(--progress); }
 }
+.progress-bar { animation: progressFill 1.5s ease-out forwards; }
 
-.progress-bar {
-  animation: progressFill 1.5s ease-out forwards;
+/* Subtle pulse on accent elements */
+@keyframes scarlet-pulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(237,33,0,0.5); }
+  50%       { box-shadow: 0 0 0 8px rgba(237,33,0,0); }
 }
+.scarlet-pulse { animation: scarlet-pulse 2s ease-in-out infinite; }

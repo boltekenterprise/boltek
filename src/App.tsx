@@ -33,19 +33,24 @@ import PortfolioPage from './pages/PortfolioPage';
 import ResearchPage from './pages/ResearchPage';
 import TrainingsPage from './pages/TrainingsPage';
 import ShopPage from './pages/ShopPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import AboutPage from './pages/AboutPage';
+
+import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/research" element={<ResearchPage />} />
-          <Route path="/trainings" element={<TrainingsPage />} />
+          <Route path="/education" element={<TrainingsPage />} />
           <Route path="/shop" element={<ShopPage />} />
+          <Route path="/shop/:id" element={<ProductDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route
             path="/job"

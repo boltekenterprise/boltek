@@ -4,7 +4,7 @@ import About from '../components/About';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-ivory flex flex-col">
       <Navbar />
       <main className="flex-grow pt-24 pb-20">
         <About />

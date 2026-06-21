@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { LogOut, AlertCircle, Loader, FileText, ListTodo, Settings, BarChart3, Briefcase } from 'lucide-react';
+import { LogOut, AlertCircle, Loader, FileText, ListTodo, Settings, BarChart3, Briefcase, ShoppingBag } from 'lucide-react';
 import QuotationManager from './QuotationManager';
 import TaskManager from './TaskManager';
 import ERPModule from './ERPModule';
 import RoleBasedDashboard from './RoleBasedDashboard';
 import PortfolioManager from './PortfolioManager';
+import ProductManager from './ProductManager';
 
-type TabType = 'dashboard' | 'quotations' | 'tasks' | 'erp' | 'portfolio';
+type TabType = 'dashboard' | 'quotations' | 'tasks' | 'erp' | 'portfolio' | 'products';
 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -17,6 +18,7 @@ const tabs = [
   { id: 'tasks', label: 'Tasks', icon: ListTodo },
   { id: 'erp', label: 'ERP System', icon: Settings },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
+  { id: 'products', label: 'Shop Products', icon: ShoppingBag },
 ];
 
 export default function JobPage() {
@@ -141,6 +143,7 @@ export default function JobPage() {
         {activeTab === 'tasks' && <TaskManager />}
         {activeTab === 'erp' && <ERPModule />}
         {activeTab === 'portfolio' && <PortfolioManager />}
+        {activeTab === 'products' && <ProductManager />}
       </main>
     </div>
   );
