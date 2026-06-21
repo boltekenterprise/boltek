@@ -10,7 +10,7 @@ export default function Portfolio() {
   const isHomePage = pathname === '/';
   const [filter, setFilter]         = useState('All');
   const [typeFilter, setTypeFilter] = useState('All Types');
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(isHomePage ? 8 : 1000);
   const [slideIndices, setSlideIndices] = useState<Record<number, number>>({});
 
   interface Project {
@@ -81,8 +81,18 @@ export default function Portfolio() {
     return () => { timers.forEach(clearInterval); };
   }, [allProjects]);
 
-  const filters     = ['All', ...Array.from(new Set(allProjects.map(p => p.category).filter(Boolean)))];
-  const typeFilters = ['All Types', ...Array.from(new Set(allProjects.map(p => p.type).filter(Boolean)))];
+  const filters = ['All', ...Array.from(new Set(allProjects.map(p => (p.category || '').trim().toLowerCase()).filter(Boolean)))];
+  
+  const uniqueTypesMap = new Map<string, string>();
+  allProjects.forEach(p => {
+    if (p.type) {
+      const t = p.type.trim();
+      if (!uniqueTypesMap.has(t.toLowerCase())) {
+        uniqueTypesMap.set(t.toLowerCase(), t);
+      }
+    }
+  });
+  const typeFilters = ['All Types', ...Array.from(uniqueTypesMap.values())];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -94,8 +104,8 @@ export default function Portfolio() {
   }, [allProjects]);
 
   const filtered = allProjects.filter(p => {
-    const catMatch  = filter     === 'All'       || p.category === filter;
-    const typeMatch = typeFilter === 'All Types' || p.type     === typeFilter;
+    const catMatch  = filter === 'All' || (p.category || '').trim().toLowerCase() === filter.toLowerCase();
+    const typeMatch = typeFilter === 'All Types' || (p.type || '').trim().toLowerCase() === typeFilter.toLowerCase();
     return catMatch && typeMatch;
   });
 
@@ -141,7 +151,7 @@ export default function Portfolio() {
             {filters.map(f => (
               <button
                 key={f}
-                onClick={() => { setFilter(f); setVisibleCount(8); }}
+                onClick={() => { setFilter(f); setVisibleCount(isHomePage ? 8 : 1000); }}
                 className="px-4 py-1.5 text-xs font-bold tracking-wider font-heading uppercase transition-all capitalize"
                 style={
                   filter === f
@@ -156,7 +166,7 @@ export default function Portfolio() {
             {typeFilters.map(t => (
               <button
                 key={t}
-                onClick={() => { setTypeFilter(t); setVisibleCount(8); }}
+                onClick={() => { setTypeFilter(t); setVisibleCount(isHomePage ? 8 : 1000); }}
                 className="px-4 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all"
                 style={
                   typeFilter === t
