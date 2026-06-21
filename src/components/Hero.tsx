@@ -74,7 +74,7 @@ export default function Hero() {
         {/* ── Left Side: Text and CTAs (70% whitespace vibe) ── */}
         <div className="w-full lg:w-[45%] text-left z-10 pt-10 lg:pt-0">
           <h1 className="font-heading font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] tracking-tight leading-[1.05] text-[#111111] mb-6">
-            Making Nepal{' '}<span style={{ color: '#6B1724' }}>Fire-Safe.</span>
+            Engineering <span style={{ color: '#6B1724' }}>Fire Safe Nepal !</span>
           </h1>
           <p className="text-stone-600 text-base sm:text-lg max-w-lg mb-8 leading-relaxed font-light">
             Engineering world-class fire protection systems, safety trainings, and equipment supply across Nepal for 20+ years.
@@ -143,7 +143,7 @@ export default function Hero() {
                              si === currentIdx ? 'opacity-100' : 'opacity-0'
                            } group-hover:scale-105 transition-[transform] duration-700`}
                            loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                           fetchPriority={i < 2 && si === 0 ? "high" : "auto"}
+                           fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
                            decoding="async"
                          />
                        ))}

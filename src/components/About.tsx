@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Target, Eye, CheckCircle, Award, MapPin, Globe, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { db } from '../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const values = [
   { icon: CheckCircle, title: 'Reliability',      description: 'We install systems that work when it matters most — every single time.' },
@@ -16,16 +18,58 @@ const certifications = [
   'Pan-Nepal Service Coverage',
 ];
 
-// Stat cards: gradient Burgundy
-const statCards = [
-  { stat: '16+', label: 'Fire Safety Projects',   desc: 'Across Nepal',                         bg: '#7C1929' },
-  { stat: '30+', label: 'Buildings Protected',     desc: 'Hotels, Hospitals, Industries & More', bg: '#6B1724' },
-  { stat: '8+',  label: 'Training Programs',       desc: 'Evacuation Drills & Workshops',         bg: '#5A121E' },
-  { stat: '20+', label: 'Years of Expertise',      desc: 'In Fire Protection',                    bg: '#4B0F19' },
-];
-
 export default function About() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  
+  // Default values before Firebase loads
+  const [stats, setStats] = useState({
+    projects: 16,
+    buildings: 30,
+    trainings: 8,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'portfolio_projects'));
+        if (snap.empty) return;
+        
+        let totalProjects = 0;
+        let trainingCount = 0;
+        const uniqueClients = new Set<string>();
+
+        snap.docs.forEach(doc => {
+          const data = doc.data();
+          if ((data.category || '').trim().toLowerCase() === 'training') {
+            trainingCount++;
+          } else {
+            totalProjects++;
+          }
+          if (data.client) {
+            uniqueClients.add(data.client.trim().toLowerCase());
+          }
+        });
+
+        // Use the actual DB counts, but keep minimums of 1 just in case
+        setStats({
+          projects: Math.max(1, totalProjects),
+          buildings: Math.max(1, uniqueClients.size),
+          trainings: Math.max(0, trainingCount),
+        });
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  // Stat cards: gradient Burgundy
+  const statCards = [
+    { stat: `${stats.projects}+`, label: 'Fire Safety Projects',   desc: 'Across Nepal',                         bg: '#7C1929' },
+    { stat: `${stats.buildings}+`, label: 'Buildings Protected',     desc: 'Hotels, Hospitals, Industries & More', bg: '#6B1724' },
+    { stat: `${stats.trainings}+`,  label: 'Training Programs',       desc: 'Evacuation Drills & Workshops',         bg: '#5A121E' },
+    { stat: '20+', label: 'Years of Expertise',      desc: 'In Fire Protection',                    bg: '#4B0F19' },
+  ];
 
   useEffect(() => {
     const observer = new IntersectionObserver(

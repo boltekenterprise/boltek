@@ -9,7 +9,6 @@ export default function Portfolio() {
   const { pathname } = useLocation();
   const isHomePage = pathname === '/';
   const [filter, setFilter]         = useState('All');
-  const [typeFilter, setTypeFilter] = useState('All Types');
   const [visibleCount, setVisibleCount] = useState(isHomePage ? 8 : 1000);
   const [slideIndices, setSlideIndices] = useState<Record<number, number>>({});
 
@@ -22,6 +21,7 @@ export default function Portfolio() {
     title: string;
     client: string;
     date: string;
+    createdAt?: { seconds: number };
   }
 
   const [allProjects, setAllProjects] = useState<Project[]>([]);
@@ -44,7 +44,14 @@ export default function Portfolio() {
     const fetchProjects = async () => {
       try {
         const snap = await getDocs(collection(db, 'portfolio_projects'));
-        setAllProjects(snap.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
+        const projects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+        // Sort newest first
+        projects.sort((a, b) => {
+          const aTime = a.createdAt?.seconds || 0;
+          const bTime = b.createdAt?.seconds || 0;
+          return bTime - aTime;
+        });
+        setAllProjects(projects);
       } catch (err) {
         console.error(err);
       } finally {
@@ -81,18 +88,7 @@ export default function Portfolio() {
     return () => { timers.forEach(clearInterval); };
   }, [allProjects]);
 
-  const filters = ['All', ...Array.from(new Set(allProjects.map(p => (p.category || '').trim().toLowerCase()).filter(Boolean)))];
-  
-  const uniqueTypesMap = new Map<string, string>();
-  allProjects.forEach(p => {
-    if (p.type) {
-      const t = p.type.trim();
-      if (!uniqueTypesMap.has(t.toLowerCase())) {
-        uniqueTypesMap.set(t.toLowerCase(), t);
-      }
-    }
-  });
-  const typeFilters = ['All Types', ...Array.from(uniqueTypesMap.values())];
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -103,11 +99,7 @@ export default function Portfolio() {
     return () => observer.disconnect();
   }, [allProjects]);
 
-  const filtered = allProjects.filter(p => {
-    const catMatch  = filter === 'All' || (p.category || '').trim().toLowerCase() === filter.toLowerCase();
-    const typeMatch = typeFilter === 'All Types' || (p.type || '').trim().toLowerCase() === typeFilter.toLowerCase();
-    return catMatch && typeMatch;
-  });
+  const filtered = allProjects;
 
   const getImages = (p: Project) => {
     if (p.images && p.images.length > 0) return p.images;
@@ -144,41 +136,7 @@ export default function Portfolio() {
           </div>
         </div>
 
-        {/* ── Filters ── */}
-        {filters.length > 1 && (
-          <div className="flex flex-wrap items-center gap-2 mb-8 animate-on-scroll">
-            <Filter className="w-4 h-4 text-stone-500 mr-1 flex-shrink-0" />
-            {filters.map(f => (
-              <button
-                key={f}
-                onClick={() => { setFilter(f); setVisibleCount(isHomePage ? 8 : 1000); }}
-                className="px-4 py-1.5 text-xs font-bold tracking-wider font-heading uppercase transition-all capitalize"
-                style={
-                  filter === f
-                    ? { background: '#6B1724', color: '#fff' }
-                    : { background: 'rgba(107, 23, 36, 0.06)', color: '#6B1724', border: '1px solid rgba(107, 23, 36, 0.15)' }
-                }
-              >
-                {f === 'All' ? 'All Projects' : f}
-              </button>
-            ))}
-            <span className="w-px h-5 bg-burgundy/20 hidden sm:block" />
-            {typeFilters.map(t => (
-              <button
-                key={t}
-                onClick={() => { setTypeFilter(t); setVisibleCount(isHomePage ? 8 : 1000); }}
-                className="px-4 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all"
-                style={
-                  typeFilter === t
-                    ? { background: 'rgba(107, 23, 36, 0.12)', color: '#6B1724', border: '1px solid rgba(107, 23, 36, 0.35)' }
-                    : { background: 'transparent', color: '#555555', border: '1px solid rgba(107, 23, 36, 0.15)' }
-                }
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
+
 
         {/* ── Grid ── */}
         {loading ? (
@@ -188,7 +146,7 @@ export default function Portfolio() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-base">No projects in database yet.</p>
+            <p className="text-gray-400 text-base">No projects found for "{filter}".</p>
             <p className="text-gray-500 text-sm mt-1">Add projects through the admin portal to see them here.</p>
             <Link to="/portfolio" className="inline-block mt-4 text-sm font-semibold hover:underline" style={{ color: '#6B1724' }}>
               View Portfolio Page →
@@ -222,7 +180,7 @@ export default function Portfolio() {
                           si === currentIdx ? 'opacity-100' : 'opacity-0'
                         } group-hover:scale-110 transition-[transform] duration-700`}
                         loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                        fetchPriority={i < 2 && si === 0 ? "high" : "auto"}
+                        fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
                         decoding="async"
                       />
                     ))}
