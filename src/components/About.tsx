@@ -92,28 +92,24 @@ export default function About() {
           {/* ── Image Side ── */}
           <div className="relative animate-on-scroll">
             <div className="relative overflow-hidden shadow-2xl">
-              <img
-                src="https://images.pexels.com/photos/6195129/pexels-photo-6195129.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="BolteK Enterprise fire protection team Nepal"
-                className="w-full h-[480px] object-cover"
-              />
+              {/* External hero image removed — render neutral placeholder block instead */}
+              <div className="w-full h-[480px] bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center">
+                <div className="text-center p-6">
+                  <div className="flex flex-col items-center gap-3">
+                    {certifications.map((cert, i) => (
+                      <div key={i} className="bg-white px-4 py-2 rounded shadow-md text-sm font-semibold text-burgundy">
+                        {cert}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               {/* Burgundy → transparent overlay */}
               <div
                 className="absolute inset-0"
                 style={{ background: 'linear-gradient(to top, rgba(107,23,36,0.35) 0%, transparent 60%)' }}
               />
-              <div className="absolute bottom-6 left-6 right-6">
-                <div className="flex flex-wrap gap-2">
-                  {certifications.map((cert, i) => (
-                    <span
-                      key={i}
-                      className="bg-white/95 text-[#6B1724] text-xs font-semibold px-3 py-1.5 shadow"
-                    >
-                      {cert}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {/* Certifications now shown in the main placeholder area */}
             </div>
 
             {/* Experience badge — Burgundy */}

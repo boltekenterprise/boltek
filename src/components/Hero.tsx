@@ -1,12 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 
+interface FeaturedProject {
+  id: string;
+  title?: string;
+  type?: string;
+  date?: string;
+  client?: string;
+  image?: string;
+  images?: string[];
+}
+
 export default function Hero() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<FeaturedProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [slideIndices, setSlideIndices] = useState<Record<number, number>>({});
+  const imageLoadedRef = useRef<Record<number, boolean[]>>({});
+  const [, setImageLoaded] = useState<Record<number, boolean[]>>({});
 
   useEffect(() => {
     const fetchFeaturedProjects = async () => {
@@ -17,7 +29,7 @@ export default function Hero() {
           limit(5)
         );
         const snapshot = await getDocs(q);
-        setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeaturedProject)));
       } catch (err) {
         console.error('Error fetching featured projects:', err);
         setProjects([]);
@@ -28,58 +40,138 @@ export default function Hero() {
     fetchFeaturedProjects();
   }, []);
 
-  // Start per-card auto-slide intervals after projects load
   useEffect(() => {
     if (projects.length === 0) return;
-
-    // Initialise all indices to 0
     const init: Record<number, number> = {};
     projects.forEach((_, i) => { init[i] = 0; });
     setSlideIndices(init);
 
-    // Create one interval per card that has more than 1 image
     const timers: ReturnType<typeof setInterval>[] = [];
     projects.forEach((project, i) => {
       const imgs = getImages(project);
       if (imgs.length > 1) {
         const t = setInterval(() => {
-          setSlideIndices(prev => ({
-            ...prev,
-            [i]: ((prev[i] ?? 0) + 1) % imgs.length,
-          }));
-        }, 2600 + i * 350); // stagger per card so they don't all flip together
+          setSlideIndices(prev => {
+            const curr = prev[i] ?? 0;
+            const next = (curr + 1) % imgs.length;
+            const loadedForProject = imageLoadedRef.current[i] || [];
+            // only advance if the next image has finished loading
+            if (!loadedForProject[next]) return prev;
+            return { ...prev, [i]: next };
+          });
+        }, 2600 + i * 350);
         timers.push(t);
       }
     });
-
     return () => { timers.forEach(clearInterval); };
   }, [projects]);
 
-  /** Normalise: new projects store images[], old ones stored image string */
-  const getImages = (project: any): string[] => {
-    if (project.images && Array.isArray(project.images) && project.images.length > 0) {
+  const getImages = (project: FeaturedProject): string[] => {
+    if (project.images && Array.isArray(project.images) && project.images.length > 0)
       return project.images;
-    }
     if (project.image) return [project.image];
     return [];
+  };
+
+  const ProjectCard = ({ project, index }: { project: FeaturedProject; index: number }) => {
+    const imgs = getImages(project);
+    const currentIdx = slideIndices[index] ?? 0;
+
+    return (
+      <div className="relative rounded-2xl overflow-hidden isolate group shadow-md border border-black/5 bg-[#f7f2ea] w-full h-full hover:-translate-y-0.5 transition-transform duration-300">
+        {imgs.length > 0 ? (
+          imgs.map((src, si) => (
+            <img
+              key={si}
+              src={src}
+              alt={project.title || 'Featured project'}
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${
+                si === currentIdx ? 'opacity-100' : 'opacity-0'
+              } group-hover:scale-105 transition-transform duration-700`}
+              loading={index < 4 && si === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              onLoad={() => {
+                // mark this image as loaded for this project index
+                imageLoadedRef.current[index] = imageLoadedRef.current[index] || [];
+                imageLoadedRef.current[index][si] = true;
+                setImageLoaded(prev => {
+                  const next = { ...prev } as Record<number, boolean[]>;
+                  const arr = (next[index] || []).slice();
+                  arr[si] = true;
+                  next[index] = arr;
+                  return next;
+                });
+              }}
+            />
+          ))
+        ) : (
+          <div className="absolute inset-0 bg-stone-200 flex items-center justify-center">
+            <div className="text-center p-4">
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-burgundy text-white mb-2">BK</div>
+              <div className="text-sm font-semibold text-stone-700">Image unavailable</div>
+              <div className="text-xs text-stone-500">No visual provided</div>
+            </div>
+          </div>
+        )}
+
+        {imgs.length > 1 && (
+          <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+            {imgs.map((_, di) => (
+              <div
+                key={di}
+                className={`rounded-full transition-all duration-300 ${
+                  di === currentIdx ? 'w-2.5 h-1.5 bg-white shadow-md' : 'w-1.5 h-1.5 bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto flex flex-col justify-end p-4 transition-opacity duration-300">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+            {project.type && (
+              <span className="text-[8px] font-bold tracking-wider uppercase bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-sm" style={{ color: '#ED2100' }}>
+                {project.type}
+              </span>
+            )}
+            {project.date && (
+              <span className="text-[9px] font-medium text-white/80 uppercase tracking-wide">
+                {project.date}
+              </span>
+            )}
+          </div>
+          <h3 className="font-sans font-semibold text-xs leading-snug line-clamp-2 mb-1 drop-shadow-md text-white">
+            {project.title}
+          </h3>
+          {project.client && (
+            <div className="flex items-center gap-1.5 text-white/90 text-[10px] font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="truncate">{project.client}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-center overflow-hidden bg-ivory text-stone-900 border-b border-burgundy/10 pt-20"
+      className="relative h-screen overflow-hidden bg-ivory text-stone-900 border-b border-burgundy/10 pt-16 lg:pt-20"
     >
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 w-full flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
-        
-        {/* ── Left Side: Text and CTAs (70% whitespace vibe) ── */}
-        <div className="w-full lg:w-[45%] text-left z-10 pt-10 lg:pt-0">
-          <h1 className="font-heading font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] tracking-tight leading-[1.05] text-[#111111] mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 w-full h-full flex flex-col lg:flex-row items-stretch gap-4 lg:gap-6 pt-20 lg:pt-0 pb-4 lg:pb-0">
+
+        {/* ── Left: headline & CTAs ── */}
+        <div className="w-full lg:w-[42%] flex flex-col justify-center text-left z-10 shrink-0 py-4 lg:py-6">
+          <h1 className="font-heading font-black text-4xl sm:text-5xl lg:text-[2.8rem] xl:text-[3.2rem] tracking-tight leading-[1.02] text-[#111111] mb-3 lg:mb-4">
             Engineering <span style={{ color: '#6B1724' }}>Fire Safe Nepal !</span>
           </h1>
-          <p className="text-stone-600 text-base sm:text-lg max-w-lg mb-8 leading-relaxed font-light">
+          <p className="text-stone-600 text-sm lg:text-[0.9rem] max-w-md mb-5 lg:mb-6 leading-relaxed font-light">
             Engineering world-class fire protection systems, safety trainings, and equipment supply across Nepal for 20+ years.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-white font-bold tracking-widest text-xs uppercase px-8 py-3.5 transition-all shadow-lg rounded-full"
@@ -103,116 +195,52 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* ── Right Side: Masonry Gallery ── */}
-        <div className="w-full lg:w-[55%] relative h-[50vh] sm:h-[60vh] lg:h-[85vh] z-0 flex items-center justify-center">
-          {loading ? (
-             <div className="w-full h-full flex items-center justify-center">
-               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-burgundy"></div>
-             </div>
-          ) : projects.length === 0 ? (
-             <div className="w-full h-full flex flex-col items-center justify-center text-center">
-               <div className="text-4xl mb-2">⭐</div>
-               <p className="text-gray-500 text-sm font-medium">No featured projects yet.</p>
-               <Link to="/admin" className="mt-4 text-xs font-bold text-burgundy border border-burgundy px-4 py-2 hover:bg-burgundy hover:text-white transition-colors rounded-full">
-                 Go to Admin Portal
-               </Link>
-             </div>
-          ) : (
-             <div className="w-full h-full overflow-hidden mask-image-bottom-fade">
-               {/* Using CSS columns for a perfect masonry layout */}
-               <div className="columns-2 sm:columns-3 gap-4 space-y-4 p-2 h-[120%] pt-4 pb-20">
-                 {projects.map((project, i) => {
-                   const imgs = getImages(project);
-                   const currentIdx = slideIndices[i] ?? 0;
-                   // Pre-defined heights to force a varied masonry look
-                   const heights = ['h-[280px]', 'h-[180px]', 'h-[340px]', 'h-[220px]', 'h-[260px]', 'h-[190px]', 'h-[300px]'];
-                   const cardHeight = heights[i % heights.length];
-                   
-                   return (
-                     <div
-                       key={project.id || i}
-                       className={`relative w-full break-inside-avoid rounded-[2rem] overflow-hidden group shadow-lg border border-black/5 hover:-translate-y-1 transition-transform duration-300 mb-6 ${cardHeight}`}
-                     >
-                       {/* Crossfading image slides */}
-                       {imgs.map((src, si) => (
-                         <img
-                           key={si}
-                           src={src}
-                           alt={project.title}
-                           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                             si === currentIdx ? 'opacity-100' : 'opacity-0'
-                           } group-hover:scale-105 transition-[transform] duration-700`}
-                           loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                           fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
-                           decoding="async"
-                         />
-                       ))}
-                       
-                       {/* Slide indicator dots */}
-                       {imgs.length > 1 && (
-                         <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
-                           {imgs.map((_, di) => (
-                             <div
-                               key={di}
-                               className={`rounded-full transition-all duration-300 ${
-                                 di === currentIdx ? 'w-2.5 h-1.5 bg-white shadow-md' : 'w-1.5 h-1.5 bg-white/50'
-                               }`}
-                             />
-                           ))}
-                         </div>
-                       )}
+        {/* ── Right: project gallery ── */}
+        <div className="w-full lg:w-[58%] flex flex-col min-h-0 py-4 lg:py-6">
 
-                       {/* Hover Gradient Overlay & Details */}
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none flex flex-col justify-end p-5 transition-opacity duration-300">
-                         {/* scale-75 scales everything 0.75x. w-[133.33%] counters the scale so it still spans the card width */}
-                         <div className="transform scale-75 origin-bottom-left translate-y-4 group-hover:translate-y-0 transition-transform duration-300 w-[133.33%]">
-                           
-                           {/* Badges: Type & Date */}
-                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                             {project.type && (
-                               <span className="text-[9px] font-bold tracking-wider uppercase bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-sm" style={{ color: '#ED2100' }}>
-                                 {project.type}
-                               </span>
-                             )}
-                             {project.date && (
-                               <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">
-                                 {project.date}
-                               </span>
-                             )}
-                           </div>
-                           
-                           {/* Project Title — White */}
-                           <h3 className="font-sans font-semibold text-xs sm:text-sm leading-snug line-clamp-2 mb-1.5 drop-shadow-md text-white">
-                             {project.title}
-                           </h3>
-                           
-                           {/* Client / Location */}
-                           {project.client && (
-                             <div className="flex items-center gap-1.5 text-white/90 text-xs font-medium">
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                               </svg>
-                               <span className="truncate">{project.client}</span>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-                     </div>
-                   );
-                 })}
-               </div>
-             </div>
+          {/* Mobile label */}
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-burgundy mb-2 lg:hidden">
+            Featured Projects
+          </p>
+
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-burgundy" />
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center rounded-3xl border border-dashed border-burgundy/20 bg-white/50">
+              <div className="text-4xl mb-2">⭐</div>
+              <p className="text-gray-500 text-sm font-medium">No featured projects yet.</p>
+              <Link to="/admin" className="mt-4 text-xs font-bold text-burgundy border border-burgundy px-4 py-2 hover:bg-burgundy hover:text-white transition-colors rounded-full">
+                Go to Admin Portal
+              </Link>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col gap-2 min-h-0">
+
+              {/* ── Top row: 2 cards ── */}
+              <div className="flex gap-2 flex-[45%] min-h-0">
+                {projects.slice(0, 2).map((project, i) => (
+                  <div key={project.id || i} className="flex-1 min-w-0 aspect-[4/3] lg:aspect-auto">
+                    <ProjectCard project={project} index={i} />
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Bottom row: 3 cards ── */}
+              <div className="flex gap-2 flex-[55%] min-h-0">
+                {projects.slice(2, 5).map((project, i) => (
+                  <div key={project.id || (i + 2)} className="flex-1 min-w-0 aspect-[3/4] lg:aspect-auto">
+                    <ProjectCard project={project} index={i + 2} />
+                  </div>
+                ))}
+              </div>
+
+            </div>
           )}
         </div>
-        
+
       </div>
-      
-      <style>{`
-        .mask-image-bottom-fade {
-          -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
-          mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
-        }
-      `}</style>
     </section>
   );
 }

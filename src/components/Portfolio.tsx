@@ -26,15 +26,25 @@ export default function Portfolio() {
 
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [bgUrl, setBgUrl]             = useState(
-    'https://images.pexels.com/photos/1098460/pexels-photo-1098460.jpeg?auto=compress&cs=tinysrgb&w=1600'
-  );
+  const imageLoadedRef = useRef<Record<number, boolean[]>>({});
+  // Do not default to an external internet image for the background.
+  // Only use a local/background path returned from the CMS (starting with '/')
+  const [bgUrl, setBgUrl] = useState('');
 
   useEffect(() => {
     const fetchBg = async () => {
       try {
         const snap = await getDoc(doc(db, 'site_settings', 'backgrounds'));
-        if (snap.exists() && snap.data().portfolio) setBgUrl(snap.data().portfolio);
+        if (snap.exists() && snap.data().portfolio) {
+          const val = String(snap.data().portfolio || '').trim();
+          // Only accept local paths to avoid pulling remote internet images as background
+          if (val.startsWith('/') || val.startsWith('./') || val.startsWith('assets/') ) {
+            setBgUrl(val);
+          } else {
+            // ignore external URLs
+            setBgUrl('');
+          }
+        }
       } catch {}
     };
     fetchBg();
@@ -76,10 +86,16 @@ export default function Portfolio() {
       const imgs = getImages(project);
       if (imgs.length > 1) {
         const t = setInterval(() => {
-          setSlideIndices(prev => ({
-            ...prev,
-            [i]: ((prev[i] ?? 0) + 1) % imgs.length,
-          }));
+          setSlideIndices(prev => {
+            const curr = prev[i] ?? 0;
+            const next = (curr + 1) % imgs.length;
+            const loadedForProject = imageLoadedRef.current[i] || [];
+            if (!loadedForProject[next]) return prev;
+            return {
+              ...prev,
+              [i]: next,
+            };
+          });
         }, 2600 + i * 350); // stagger per card so they don't all flip together
         timers.push(t);
       }
@@ -153,98 +169,212 @@ export default function Portfolio() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filtered.slice(0, visibleCount).map((project, i) => {
-              // Find original index in allProjects to match slideIndices
-              const origIndex = allProjects.findIndex(p => p.id === project.id);
-              const imgs = getImages(project);
-              const currentIdx = slideIndices[origIndex] ?? 0;
+          // If we're on the standalone Portfolio page, group by `type` and render sections
+          !isHomePage ? (
+            (() => {
+              const groups: Record<string, typeof filtered> = {};
+              filtered.forEach(p => {
+                const key = (p.type || 'Other').trim() || 'Other';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+              });
+
+              // Preferred ordering for sections (will include others afterwards)
+              const preferred = ['Installations', 'Maintenance', 'Trainings', 'Consulting', 'Other'];
+              const orderedKeys = Array.from(new Set([
+                ...preferred.filter(k => groups[k]),
+                ...Object.keys(groups).filter(k => !preferred.includes(k)),
+              ]));
 
               return (
-              <div
-                key={project.id || i}
-                className="animate-on-scroll group relative overflow-hidden shadow-xl border border-burgundy/10 transition-all duration-500"
-                style={{ transitionDelay: `${(i % 4) * 60}ms`, height: '240px', borderColor: 'rgba(107,23,36,0.1)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.55)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.1)'; }}
-              >
-                {imgs.length > 0 ? (
-                  <>
-                    {/* Crossfading image slides */}
-                    {imgs.map((src, si) => (
-                      <img
-                        key={si}
-                        src={src}
-                        alt={project.title}
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                          si === currentIdx ? 'opacity-100' : 'opacity-0'
-                        } group-hover:scale-110 transition-[transform] duration-700`}
-                        loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                        fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
-                        decoding="async"
-                      />
-                    ))}
-                    {/* Slide indicator dots */}
-                    {imgs.length > 1 && (
-                      <div className="absolute top-2 left-0 right-0 flex justify-center gap-1 z-10 pointer-events-none">
-                        {imgs.map((_, di) => (
-                          <div
-                            key={di}
-                            className={`rounded-full transition-all duration-300 ${
-                              di === currentIdx
-                                ? 'w-2 h-1 bg-white shadow'
-                                : 'w-1 h-1 bg-white/40'
-                            }`}
-                          />
-                        ))}
+                <div className="flex flex-col gap-12">
+                  {orderedKeys.map((key) => (
+                    <section key={key} className="animate-on-scroll">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-heading font-black text-2xl text-stone-900">{key}</h3>
+                          <p className="text-sm text-stone-600">{groups[key].length} projects</p>
+                        </div>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-                    <span className="text-gray-600 text-xs">No image uploaded</span>
-                  </div>
-                )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {groups[key].slice(0, visibleCount).map((project, i) => {
+                          const origIndex = allProjects.findIndex(p => p.id === project.id);
+                          const imgs = getImages(project);
+                          const currentIdx = slideIndices[origIndex] ?? 0;
+                          return (
+                            <div
+                              key={project.id || i}
+                              className="relative group overflow-hidden shadow-xl border border-burgundy/10 transition-all duration-500"
+                              style={{ height: '260px', borderColor: 'rgba(107,23,36,0.08)' }}
+                            >
+                              {imgs.length > 0 ? (
+                                <>
+                                  {imgs.map((src, si) => (
+                                    <img
+                                      key={si}
+                                      src={src}
+                                      alt={project.title}
+                                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${si === currentIdx ? 'opacity-100' : 'opacity-0'} group-hover:scale-110 transition-[transform] duration-700`}
+                                      loading={i < 4 && si === 0 ? 'eager' : 'lazy'}
+                                      decoding="async"
+                                      onLoad={() => {
+                                        imageLoadedRef.current[origIndex] = imageLoadedRef.current[origIndex] || [];
+                                        imageLoadedRef.current[origIndex][si] = true;
+                                      }}
+                                    />
+                                  ))}
+                                </>
+                              ) : (
+                                <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                                  <div className="text-center p-3">
+                                    <div className="flex flex-col items-center gap-3">
+                                      {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
+                                        <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
-                {/* Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
-                  <span
-                    className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md"
-                    style={{ color: '#ED2100' }}
-                  >
-                    {project.type || 'Project'}
-                  </span>
-                  {project.category && (
-                    <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
-                      {project.category}
-                    </span>
-                  )}
+                              <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
+                                <span className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md" style={{ color: '#ED2100' }}>
+                                  {project.type || 'Project'}
+                                </span>
+                                {project.category && (
+                                  <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
+                                    {project.category}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="absolute bottom-0 left-0 right-0 p-4">
+                                <h4 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h4>
+                                <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
+                                  <Building2 className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">{project.client}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-stone-300 text-xs">
+                                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                                  <span>{project.date}</span>
+                                </div>
+                              </div>
+
+                              <div className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" style={{ background: '#6B1724' }} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
+              );
+            })()
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filtered.slice(0, visibleCount).map((project, i) => {
+                // Find original index in allProjects to match slideIndices
+                const origIndex = allProjects.findIndex(p => p.id === project.id);
+                const imgs = getImages(project);
+                const currentIdx = slideIndices[origIndex] ?? 0;
 
-                {/* Caption */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h3>
-                  <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
-                    <Building2 className="w-3 h-3 flex-shrink-0" />
-                    <span className="truncate">{project.client}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-stone-300 text-xs">
-                    <Calendar className="w-3 h-3 flex-shrink-0" />
-                    <span>{project.date}</span>
-                  </div>
-                </div>
-
-                {/* Bottom accent bar on hover — Burgundy */}
+                return (
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
-                  style={{ background: '#6B1724' }}
-                />
-              </div>
-            )})}
-          </div>
+                  key={project.id || i}
+                  className="animate-on-scroll group relative overflow-hidden shadow-xl border border-burgundy/10 transition-all duration-500"
+                  style={{ transitionDelay: `${(i % 4) * 60}ms`, height: '240px', borderColor: 'rgba(107,23,36,0.1)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.55)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.1)'; }}
+                >
+                  {imgs.length > 0 ? (
+                    <>
+                      {/* Crossfading image slides */}
+                      {imgs.map((src, si) => (
+                        <img
+                          key={si}
+                          src={src}
+                          alt={project.title}
+                          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                            si === currentIdx ? 'opacity-100' : 'opacity-0'
+                          } group-hover:scale-110 transition-[transform] duration-700`}
+                          loading={i < 4 && si === 0 ? "eager" : "lazy"}
+                          fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
+                          decoding="async"
+                            onLoad={() => {
+                              imageLoadedRef.current[origIndex] = imageLoadedRef.current[origIndex] || [];
+                              imageLoadedRef.current[origIndex][si] = true;
+                            }}
+                        />
+                      ))}
+                      {/* Slide indicator dots */}
+                      {imgs.length > 1 && (
+                        <div className="absolute top-2 left-0 right-0 flex justify-center gap-1 z-10 pointer-events-none">
+                          {imgs.map((_, di) => (
+                            <div
+                              key={di}
+                              className={`rounded-full transition-all duration-300 ${
+                                di === currentIdx
+                                  ? 'w-2 h-1 bg-white shadow'
+                                  : 'w-1 h-1 bg-white/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                      <div className="text-center p-3">
+                        <div className="flex flex-col items-center gap-3">
+                          {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
+                            <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
+
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
+                    <span
+                      className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md"
+                      style={{ color: '#ED2100' }}
+                    >
+                      {project.type || 'Project'}
+                    </span>
+                    {project.category && (
+                      <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
+                        {project.category}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Caption */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h3>
+                    <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
+                      <Building2 className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{project.client}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-stone-300 text-xs">
+                      <Calendar className="w-3 h-3 flex-shrink-0" />
+                      <span>{project.date}</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom accent bar on hover — Burgundy */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
+                    style={{ background: '#6B1724' }}
+                  />
+                </div>
+              )})}
+            </div>
+          )
         )}
 
         {/* View All / Load More Logic */}

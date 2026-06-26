@@ -13,12 +13,21 @@ interface TrainingProject {
   images?: string[];
 }
 
+interface BlogItem {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  image?: string;
+  category?: string;
+}
 export default function Trainings() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const [pastTrainings, setPastTrainings] = useState<TrainingProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [latestBlog, setLatestBlog] = useState<BlogItem | null>(null);
 
   useEffect(() => {
     const fetchTrainings = async () => {
@@ -43,6 +52,21 @@ export default function Trainings() {
       }
     };
     fetchTrainings();
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestBlog = async () => {
+      try {
+        const q = query(collection(db, 'blogs'), orderBy('createdAt', 'desc'), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setLatestBlog({ id: snap.docs[0].id, ...snap.docs[0].data() } as BlogItem);
+        }
+      } catch (err) {
+        console.error('Error fetching latest blog:', err);
+      }
+    };
+    fetchLatestBlog();
   }, []);
 
   useEffect(() => {
@@ -100,7 +124,15 @@ export default function Trainings() {
                         {displayImg ? (
                           <img src={displayImg} alt={t.title} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Image</div>
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center p-3">
+                              <div className="flex flex-col items-center gap-3">
+                                {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
+                                  <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -125,47 +157,61 @@ export default function Trainings() {
 
           {/* Resources Grid (Blogs, Videos, Social) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-on-scroll">
-            {/* Blogs */}
-            <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
-              <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
-                <BookOpen className="w-7 h-7" />
+              {/* Trainings Card */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
+                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
+                  <ShieldAlert className="w-7 h-7 text-[#ED2100]" />
+                </div>
+                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Fire Safety Trainings</h4>
+                <p className="text-sm text-stone-600 mb-6 leading-relaxed">Structured courses covering NFPA fundamentals, evacuation drills, and hands-on extinguisher practice.</p>
+                <Link to="/education/trainings" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
-              <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Safety Blogs & Articles</h4>
-              <p className="text-sm text-stone-600 mb-6 leading-relaxed">
-                In-depth guides on NFPA compliance, fire hazard mitigation, and the latest in fire suppression technology.
-              </p>
-              <a href="#" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
-                Read Articles <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-              </a>
-            </div>
 
-            {/* Videos */}
-            <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
-              <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
-                <PlayCircle className="w-7 h-7" />
+              {/* Blogs */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
+                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
+                  <BookOpen className="w-7 h-7" />
+                </div>
+                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Safety Blogs & Articles</h4>
+                {latestBlog ? (
+                  <div className="mb-4">
+                    {latestBlog.image && <img src={latestBlog.image} alt={latestBlog.title} className="w-full h-36 object-cover rounded mb-3" />}
+                    <h5 className="font-semibold text-sm text-stone-900 mb-1 line-clamp-2">{latestBlog.title}</h5>
+                    <p className="text-sm text-stone-600 mb-3 line-clamp-3">{latestBlog.excerpt}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-stone-600 mb-6 leading-relaxed">In-depth guides on NFPA compliance, fire hazard mitigation, and the latest in fire suppression technology.</p>
+                )}
+                <Link to="/education/blogs" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
-              <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Video Resources</h4>
-              <p className="text-sm text-stone-600 mb-6 leading-relaxed">
-                Visual tutorials on operating fire extinguishers, system maintenance, and proper evacuation protocols.
-              </p>
-              <a href="#" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
-                Watch Videos <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-              </a>
-            </div>
 
-            {/* Social Awareness */}
-            <div className="bg-[#6B1724] p-8 shadow-md hover:shadow-lg transition-shadow group text-white">
-              <div className="w-14 h-14 bg-white/10 flex items-center justify-center mb-6 text-white group-hover:bg-white group-hover:text-[#6B1724] transition-colors">
-                <Share2 className="w-7 h-7" />
+              {/* Videos */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
+                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
+                  <PlayCircle className="w-7 h-7" />
+                </div>
+                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Video Resources</h4>
+                <p className="text-sm text-stone-600 mb-6 leading-relaxed">Visual tutorials on operating fire extinguishers, system maintenance, and proper evacuation protocols.</p>
+                <Link to="/education/videos" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
-              <h4 className="font-heading font-bold text-xl mb-3">Social Awareness</h4>
-              <p className="text-sm text-white/80 mb-6 leading-relaxed">
-                Join our community campaigns. Share life-saving tips, drill updates, and community safety initiatives.
-              </p>
-              <a href="#" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
-                Join Campaign <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-              </a>
-            </div>
+
+              {/* Social Awareness */}
+              <div className="bg-[#6B1724] p-8 shadow-md hover:shadow-lg transition-shadow group text-white">
+                <div className="w-14 h-14 bg-white/10 flex items-center justify-center mb-6 text-white group-hover:bg-white group-hover:text-[#6B1724] transition-colors">
+                  <Share2 className="w-7 h-7" />
+                </div>
+                <h4 className="font-heading font-bold text-xl mb-3">Social Awareness</h4>
+                <p className="text-sm text-white/80 mb-6 leading-relaxed">Join our community campaigns. Share life-saving tips, drill updates, and community safety initiatives.</p>
+                <Link to="/education/social" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
+                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
           </div>
 
           {/* View All Details Button */}

@@ -86,17 +86,19 @@ const detailedServices = [
 
 export default function ServicesPage() {
   const [portfolioImages, setPortfolioImages] = useState<Record<string, string[]>>({});
+  const [portfolioProjects, setPortfolioProjects] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
         const snap = await getDocs(collection(db, 'portfolio_projects'));
         const imagesMap: Record<string, string[]> = {};
-        
+        const projects: any[] = [];
+
         snap.docs.forEach(doc => {
           const data = doc.data();
           const cat = (data.category || '').trim().toLowerCase();
-          
+
           let imgs: string[] = [];
           if (data.images && data.images.length > 0) {
             imgs = data.images;
@@ -104,13 +106,17 @@ export default function ServicesPage() {
             imgs = [data.image];
           }
 
+          // collect projects for relevance matching
+          projects.push({ id: doc.id, ...data, images: imgs });
+
           if (imgs.length > 0) {
             if (!imagesMap[cat]) imagesMap[cat] = [];
             imagesMap[cat].push(...imgs);
           }
         });
-        
+
         setPortfolioImages(imagesMap);
+        setPortfolioProjects(projects);
       } catch (err) {
         console.error('Error fetching portfolio images:', err);
       }
@@ -141,20 +147,52 @@ export default function ServicesPage() {
             {detailedServices.map((service, index) => {
               const isEven = index % 2 === 0;
               const Icon = service.icon;
-              const catImages = portfolioImages[service.id] || [];
-              const displayImage = catImages.length > 0 ? catImages[0] : service.fallbackImage;
+
+              // Gather images from portfolio projects that match this service by category or type
+              const matchedProjects = portfolioProjects.filter(p => {
+                const cat = String(p.category || '').trim().toLowerCase();
+                const type = String(p.type || '').trim().toLowerCase();
+                const sid = String(service.id || '').trim().toLowerCase();
+                return cat === sid || type === sid || cat.includes(sid) || type.includes(sid);
+              });
+
+              const catImages = matchedProjects.flatMap(p => (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []));
+
+              // Prefer first DB image from matched projects; do not use external fallback images
+              const displayImage = catImages.length > 0 ? catImages[0] : '';
               
               return (
                 <div key={service.id} id={service.id} className={`flex flex-col lg:flex-row gap-12 lg:gap-20 items-center ${isEven ? '' : 'lg:flex-row-reverse'}`}>
                   {/* Image Side */}
                   <div className="w-full lg:w-1/2 relative group">
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
-                      <img 
-                        src={displayImage} 
-                        alt={service.title} 
-                        className="w-full h-[450px] object-cover transition-transform duration-1000 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                      {displayImage ? (
+                        <>
+                          <img
+                            src={displayImage}
+                            alt={service.title}
+                            className="w-full h-[450px] object-cover transition-transform duration-1000 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                        </>
+                      ) : (
+                        <div className="w-full h-[450px] bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
+                          <div className="text-center p-6">
+                            <div className="flex flex-col items-center gap-3">
+                              {[
+                                'Nepal Building Code Compliant',
+                                'NFPA Standards Adherent',
+                                'Govt. of Nepal Registered',
+                                'Pan-Nepal Service Coverage'
+                              ].map((t, i) => (
+                                <div key={i} className="bg-white px-4 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">
+                                  {t}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="absolute inset-0 border-[6px] border-white/20 rounded-2xl z-10 m-4 pointer-events-none transition-all duration-500 group-hover:m-2" />
                       

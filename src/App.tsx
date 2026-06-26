@@ -35,6 +35,12 @@ import TrainingsPage from './pages/TrainingsPage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import AboutPage from './pages/AboutPage';
+import BlogDetail from './pages/BlogDetail';
+import BlogManager from './pages/BlogManager';
+import EducationBlogs from './pages/EducationBlogs';
+import EducationVideos from './pages/EducationVideos';
+import EducationSocial from './pages/EducationSocial';
+import EducationTrainings from './pages/EducationTrainings';
 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -49,9 +55,22 @@ export default function App() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/research" element={<ResearchPage />} />
           <Route path="/education" element={<TrainingsPage />} />
+          <Route path="/education/trainings" element={<EducationTrainings />} />
+          <Route path="/education/videos" element={<EducationVideos />} />
+          <Route path="/education/social" element={<EducationSocial />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/shop/:id" element={<ProductDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/education/blogs" element={<EducationBlogs />} />
+          <Route path="/education/blogs/:slug" element={<BlogDetail />} />
+          <Route
+            path="/admin/blogs"
+            element={
+              <ProtectedRoute>
+                <BlogManager />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/job"
             element={
