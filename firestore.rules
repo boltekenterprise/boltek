@@ -6,11 +6,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper function to check if the user has the 'admin' role
+    // Helper function to check if the user has a verified email (acting as admin)
     function isAdmin() {
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && request.auth.token.email_verified == true;
     }
 
     // Rules for admin_users collection

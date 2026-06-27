@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import { db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { LogOut, AlertCircle, Loader, FileText, ListTodo, Settings, BarChart3, Briefcase, ShoppingBag, BookOpen } from 'lucide-react';
 import BlogManager from './BlogManager';
 import QuotationManager from './QuotationManager';
@@ -36,18 +34,9 @@ export default function JobPage() {
   }, [user]);
 
   const checkAuthorization = async () => {
-    try {
-      if (!user?.uid) return;
-      const docRef = doc(db, 'admin_users', user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists() && docSnap.data().role === 'admin') {
-        setIsAuthorized(true);
-      } else {
-        setIsAuthorized(false);
-      }
-    } catch (err) {
-      console.error('Authorization check failed:', err);
+    if (user && user.emailVerified) {
+      setIsAuthorized(true);
+    } else {
       setIsAuthorized(false);
     }
   };
@@ -62,7 +51,7 @@ export default function JobPage() {
         <div className="text-center p-6 bg-white rounded-xl border shadow-sm max-w-sm w-full mx-4">
           <Loader className="w-8 h-8 text-flame-700 animate-spin mx-auto mb-4" />
           <p className="text-gray-750 font-medium mb-1">Verifying admin access...</p>
-          <p className="text-gray-500 text-xs mb-6">Checking credentials on Firestore</p>
+          <p className="text-gray-500 text-xs mb-6">Checking email verification status</p>
           <button
             onClick={handleLogout}
             className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 py-2 rounded text-xs font-semibold border border-stone-200 transition-colors"
