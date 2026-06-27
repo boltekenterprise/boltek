@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendEmailVerification,
   User,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -16,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,20 +40,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    // Create a database entry for the employee with a pending role
-    await setDoc(doc(db, 'admin_users', userCredential.user.uid), {
-      email,
-      role: 'pending',
-      created_at: new Date().toISOString()
-    });
+    // Send email verification link immediately
+    await sendEmailVerification(userCredential.user);
+    // Create a database entry for the employee with a pending role (wrapped in try/catch to avoid blocking registration)
+    try {
+      await setDoc(doc(db, 'admin_users', userCredential.user.uid), {
+        email,
+        role: 'pending',
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn("Could not create admin_users profile document on Firestore:", e);
+    }
   };
 
   const logout = async () => {
     await signOut(auth);
   };
 
+  const sendVerificationEmail = async () => {
+    if (auth.currentUser) {
+      await sendEmailVerification(auth.currentUser);
+    } else {
+      throw new Error("No user is currently signed in.");
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, sendVerificationEmail }}>
       {children}
     </AuthContext.Provider>
   );

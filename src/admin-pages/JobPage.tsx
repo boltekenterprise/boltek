@@ -25,7 +25,10 @@ const tabs = [
 export default function JobPage() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const { user, logout } = useAuth();
+  const [verificationSending, setVerificationSending] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const { user, logout, sendVerificationEmail } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -34,15 +37,37 @@ export default function JobPage() {
   }, [user]);
 
   const checkAuthorization = async () => {
-    if (user && user.emailVerified) {
-      setIsAuthorized(true);
-    } else {
-      setIsAuthorized(false);
+    if (user) {
+      // Reload user object to get the latest emailVerified value
+      try {
+        await user.reload();
+      } catch (err) {
+        console.error('Error reloading user status:', err);
+      }
+      if (user.emailVerified) {
+        setIsAuthorized(true);
+      } else {
+        setIsAuthorized(false);
+      }
     }
   };
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleResendVerification = async () => {
+    setVerificationSending(true);
+    setVerificationMessage('');
+    setVerificationError('');
+    try {
+      await sendVerificationEmail();
+      setVerificationMessage('Verification email sent! Please check your inbox.');
+    } catch (err: any) {
+      setVerificationError(err.message || 'Failed to send verification email.');
+    } finally {
+      setVerificationSending(false);
+    }
   };
 
   if (isAuthorized === null) {
@@ -70,17 +95,47 @@ export default function JobPage() {
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
             <h1 className="font-heading font-bold text-xl text-gray-900 mb-2">
-              Access Denied
+              Email Verification Required
             </h1>
-            <p className="text-gray-600 text-sm mb-6">
-              Your account is not authorized to access this portal.
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+              Your account is registered, but your email has not been verified yet. Please click the link sent to your email to verify your address.
             </p>
-            <button
-              onClick={handleLogout}
-              className="w-full bg-flame-700 hover:bg-flame-600 text-white font-semibold py-3 rounded-lg text-sm transition-colors"
-            >
-              Sign In With Different Account
-            </button>
+
+            {verificationMessage && (
+              <p className="text-green-600 text-xs font-semibold mb-4 bg-green-50 p-2.5 rounded border border-green-100">
+                {verificationMessage}
+              </p>
+            )}
+
+            {verificationError && (
+              <p className="text-red-600 text-xs font-semibold mb-4 bg-red-50 p-2.5 rounded border border-red-100">
+                {verificationError}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={checkAuthorization}
+                className="w-full bg-flame-700 hover:bg-flame-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+              >
+                I have verified my email (Check Status)
+              </button>
+              
+              <button
+                onClick={handleResendVerification}
+                disabled={verificationSending}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
+              >
+                {verificationSending ? 'Sending...' : 'Resend Verification Email'}
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-stone-200"
+              >
+                Sign In With Different Account
+              </button>
+            </div>
           </div>
         </div>
       </div>
