@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Calendar, Building2, Filter, ArrowRight } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Calendar, Building2, ArrowRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -8,9 +8,8 @@ export default function Portfolio() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const isHomePage = pathname === '/';
-  const [filter, setFilter]         = useState('All');
+
   const [visibleCount, setVisibleCount] = useState(isHomePage ? 8 : 1000);
-  const [slideIndices, setSlideIndices] = useState<Record<number, number>>({});
 
   interface Project {
     id: string;
@@ -24,9 +23,118 @@ export default function Portfolio() {
     createdAt?: { seconds: number };
   }
 
+  const getImages = (p: Project) => {
+    if (p.images && p.images.length > 0) return p.images;
+    if (p.image) return [p.image];
+    return [];
+  };
+
+  const PortfolioCard = React.memo(({ project, i, isHomePage }: { project: Project; i: number; isHomePage: boolean }) => {
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const imgs = getImages(project);
+    const imageLoadedRef = useRef<boolean[]>([]);
+
+    useEffect(() => {
+      if (imgs.length <= 1) return;
+      const t = setInterval(() => {
+        setCurrentIdx((prev) => {
+          const next = (prev + 1) % imgs.length;
+          if (!imageLoadedRef.current[next]) return prev;
+          return next;
+        });
+      }, 2600 + (i % 10) * 350);
+      return () => clearInterval(t);
+    }, [imgs.length, i]);
+
+    const height = isHomePage ? '240px' : '260px';
+    const delay = isHomePage ? `${(i % 4) * 60}ms` : undefined;
+
+    return (
+      <div
+        className={`${isHomePage ? 'animate-on-scroll ' : ''}group relative overflow-hidden shadow-xl border transition-all duration-500`}
+        style={{
+          transitionDelay: delay,
+          height,
+          borderColor: 'rgba(107,23,36,0.1)',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.55)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.1)'; }}
+      >
+        {imgs.length > 0 ? (
+          <>
+            {imgs.map((src, si) => (
+              <img
+                key={si}
+                src={src}
+                alt={project.title}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                  si === currentIdx ? 'opacity-100' : 'opacity-0'
+                } group-hover:scale-110 transition-[transform] duration-700`}
+                loading={i < 4 && si === 0 ? "eager" : "lazy"}
+                fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
+                decoding="async"
+                onLoad={() => {
+                  imageLoadedRef.current[si] = true;
+                }}
+              />
+            ))}
+            {isHomePage && imgs.length > 1 && (
+              <div className="absolute top-2 left-0 right-0 flex justify-center gap-1 z-10 pointer-events-none">
+                {imgs.map((_, di) => (
+                  <div
+                    key={di}
+                    className={`rounded-full transition-all duration-300 ${
+                      di === currentIdx ? 'w-2 h-1 bg-white shadow' : 'w-1 h-1 bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+            <div className="text-center p-3">
+              <div className="flex flex-col items-center gap-3">
+                {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,idx)=>(
+                  <div key={idx} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
+
+        <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
+          <span className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md" style={{ color: '#ED2100' }}>
+            {project.type || 'Project'}
+          </span>
+          {project.category && (
+            <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
+              {project.category}
+            </span>
+          )}
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h4 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h4>
+          <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
+            <Building2 className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{project.client}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-stone-300 text-xs">
+            <Calendar className="w-3 h-3 flex-shrink-0" />
+            <span>{project.date}</span>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" style={{ background: '#6B1724' }} />
+      </div>
+    );
+  });
+
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading]         = useState(true);
-  const imageLoadedRef = useRef<Record<number, boolean[]>>({});
   // Do not default to an external internet image for the background.
   // Only use a local/background path returned from the CMS (starting with '/')
   const [bgUrl, setBgUrl] = useState('');
@@ -71,38 +179,7 @@ export default function Portfolio() {
     fetchProjects();
   }, []);
 
-  // Start per-card auto-slide intervals after projects load
-  useEffect(() => {
-    if (allProjects.length === 0) return;
 
-    // Initialise all indices to 0
-    const init: Record<number, number> = {};
-    allProjects.forEach((_, i) => { init[i] = 0; });
-    setSlideIndices(init);
-
-    // Create one interval per card that has more than 1 image
-    const timers: ReturnType<typeof setInterval>[] = [];
-    allProjects.forEach((project, i) => {
-      const imgs = getImages(project);
-      if (imgs.length > 1) {
-        const t = setInterval(() => {
-          setSlideIndices(prev => {
-            const curr = prev[i] ?? 0;
-            const next = (curr + 1) % imgs.length;
-            const loadedForProject = imageLoadedRef.current[i] || [];
-            if (!loadedForProject[next]) return prev;
-            return {
-              ...prev,
-              [i]: next,
-            };
-          });
-        }, 2600 + i * 350); // stagger per card so they don't all flip together
-        timers.push(t);
-      }
-    });
-
-    return () => { timers.forEach(clearInterval); };
-  }, [allProjects]);
 
 
 
@@ -115,13 +192,7 @@ export default function Portfolio() {
     return () => observer.disconnect();
   }, [allProjects]);
 
-  const filtered = allProjects;
 
-  const getImages = (p: Project) => {
-    if (p.images && p.images.length > 0) return p.images;
-    if (p.image) return [p.image];
-    return [];
-  };
 
   return (
     <section
@@ -160,9 +231,9 @@ export default function Portfolio() {
             <div className="inline-block w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-3" style={{ borderColor: '#6B1724', borderTopColor: 'transparent' }} />
             <p className="text-gray-400 text-sm">Loading portfolio from database…</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : allProjects.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-base">No projects found for "{filter}".</p>
+            <p className="text-gray-400 text-base">No projects found yet.</p>
             <p className="text-gray-500 text-sm mt-1">Add projects through the admin portal to see them here.</p>
             <Link to="/portfolio" className="inline-block mt-4 text-sm font-semibold hover:underline" style={{ color: '#6B1724' }}>
               View Portfolio Page →
@@ -172,8 +243,8 @@ export default function Portfolio() {
           // If we're on the standalone Portfolio page, group by `type` and render sections
           !isHomePage ? (
             (() => {
-              const groups: Record<string, typeof filtered> = {};
-              filtered.forEach(p => {
+              const groups: Record<string, Project[]> = {};
+              allProjects.forEach((p: Project) => {
                 const key = (p.type || 'Other').trim() || 'Other';
                 if (!groups[key]) groups[key] = [];
                 groups[key].push(p);
@@ -197,74 +268,9 @@ export default function Portfolio() {
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {groups[key].slice(0, visibleCount).map((project, i) => {
-                          const origIndex = allProjects.findIndex(p => p.id === project.id);
-                          const imgs = getImages(project);
-                          const currentIdx = slideIndices[origIndex] ?? 0;
-                          return (
-                            <div
-                              key={project.id || i}
-                              className="relative group overflow-hidden shadow-xl border border-burgundy/10 transition-all duration-500"
-                              style={{ height: '260px', borderColor: 'rgba(107,23,36,0.08)' }}
-                            >
-                              {imgs.length > 0 ? (
-                                <>
-                                  {imgs.map((src, si) => (
-                                    <img
-                                      key={si}
-                                      src={src}
-                                      alt={project.title}
-                                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${si === currentIdx ? 'opacity-100' : 'opacity-0'} group-hover:scale-110 transition-[transform] duration-700`}
-                                      loading={i < 4 && si === 0 ? 'eager' : 'lazy'}
-                                      decoding="async"
-                                      onLoad={() => {
-                                        imageLoadedRef.current[origIndex] = imageLoadedRef.current[origIndex] || [];
-                                        imageLoadedRef.current[origIndex][si] = true;
-                                      }}
-                                    />
-                                  ))}
-                                </>
-                              ) : (
-                                <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-                                  <div className="text-center p-3">
-                                    <div className="flex flex-col items-center gap-3">
-                                      {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
-                                        <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
-
-                              <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
-                                <span className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md" style={{ color: '#ED2100' }}>
-                                  {project.type || 'Project'}
-                                </span>
-                                {project.category && (
-                                  <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
-                                    {project.category}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="absolute bottom-0 left-0 right-0 p-4">
-                                <h4 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h4>
-                                <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
-                                  <Building2 className="w-3 h-3 flex-shrink-0" />
-                                  <span className="truncate">{project.client}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-stone-300 text-xs">
-                                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                                  <span>{project.date}</span>
-                                </div>
-                              </div>
-
-                              <div className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" style={{ background: '#6B1724' }} />
-                            </div>
-                          );
-                        })}
+                        {groups[key].slice(0, visibleCount).map((project: Project, i: number) => (
+                          <PortfolioCard key={project.id || i} project={project} i={i} isHomePage={false} />
+                        ))}
                       </div>
                     </section>
                   ))}
@@ -273,106 +279,9 @@ export default function Portfolio() {
             })()
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {filtered.slice(0, visibleCount).map((project, i) => {
-                // Find original index in allProjects to match slideIndices
-                const origIndex = allProjects.findIndex(p => p.id === project.id);
-                const imgs = getImages(project);
-                const currentIdx = slideIndices[origIndex] ?? 0;
-
-                return (
-                <div
-                  key={project.id || i}
-                  className="animate-on-scroll group relative overflow-hidden shadow-xl border border-burgundy/10 transition-all duration-500"
-                  style={{ transitionDelay: `${(i % 4) * 60}ms`, height: '240px', borderColor: 'rgba(107,23,36,0.1)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.55)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,23,36,0.1)'; }}
-                >
-                  {imgs.length > 0 ? (
-                    <>
-                      {/* Crossfading image slides */}
-                      {imgs.map((src, si) => (
-                        <img
-                          key={si}
-                          src={src}
-                          alt={project.title}
-                          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                            si === currentIdx ? 'opacity-100' : 'opacity-0'
-                          } group-hover:scale-110 transition-[transform] duration-700`}
-                          loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                          fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
-                          decoding="async"
-                            onLoad={() => {
-                              imageLoadedRef.current[origIndex] = imageLoadedRef.current[origIndex] || [];
-                              imageLoadedRef.current[origIndex][si] = true;
-                            }}
-                        />
-                      ))}
-                      {/* Slide indicator dots */}
-                      {imgs.length > 1 && (
-                        <div className="absolute top-2 left-0 right-0 flex justify-center gap-1 z-10 pointer-events-none">
-                          {imgs.map((_, di) => (
-                            <div
-                              key={di}
-                              className={`rounded-full transition-all duration-300 ${
-                                di === currentIdx
-                                  ? 'w-2 h-1 bg-white shadow'
-                                  : 'w-1 h-1 bg-white/40'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-                      <div className="text-center p-3">
-                        <div className="flex flex-col items-center gap-3">
-                          {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
-                            <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
-
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 items-start">
-                    <span
-                      className="text-[10px] font-bold tracking-wider uppercase bg-white/95 px-3 py-1 rounded-full backdrop-blur-sm shadow-md"
-                      style={{ color: '#ED2100' }}
-                    >
-                      {project.type || 'Project'}
-                    </span>
-                    {project.category && (
-                      <span className="text-[10px] font-medium text-white/90 bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full capitalize shadow-md">
-                        {project.category}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Caption */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <h3 className="font-sans font-semibold text-white text-sm leading-tight mb-1.5 drop-shadow-lg">{project.title}</h3>
-                    <div className="flex items-center gap-1.5 text-stone-200 text-xs mb-0.5">
-                      <Building2 className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{project.client}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-stone-300 text-xs">
-                      <Calendar className="w-3 h-3 flex-shrink-0" />
-                      <span>{project.date}</span>
-                    </div>
-                  </div>
-
-                  {/* Bottom accent bar on hover — Burgundy */}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
-                    style={{ background: '#6B1724' }}
-                  />
-                </div>
-              )})}
+              {allProjects.slice(0, visibleCount).map((project, i) => (
+                <PortfolioCard key={project.id || i} project={project} i={i} isHomePage={true} />
+              ))}
             </div>
           )
         )}
@@ -397,7 +306,7 @@ export default function Portfolio() {
             </Link>
           </div>
         ) : (
-          !loading && visibleCount < filtered.length && (
+          !loading && visibleCount < allProjects.length && (
             <div className="text-center mt-8">
               <button
                 onClick={() => setVisibleCount(v => v + 8)}

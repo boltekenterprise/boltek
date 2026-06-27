@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db, storage } from '../lib/firebase';
 import {
   collection, addDoc, getDocs, deleteDoc, doc,
@@ -57,7 +57,7 @@ export default function PortfolioManager() {
     return [];
   };
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const q = query(collection(db, 'portfolio_projects'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
@@ -67,45 +67,21 @@ export default function PortfolioManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  /** Compress image to max 1200px WebP before upload */
+  // use centralized browser compression helper (70% quality)
+  import('../lib/imageCompress').then(() => {
+    // noop: dynamic import to satisfy bundler in this module scope
+  }).catch(() => {});
+
   const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX = 1200;
-          if (width > height && width > MAX) {
-            height *= MAX / width;
-            width = MAX;
-          } else if (height > MAX) {
-            width *= MAX / height;
-            height = MAX;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
-                type: 'image/webp',
-                lastModified: Date.now()
-              });
-              resolve(compressedFile);
-            } else resolve(file);
-          }, 'image/webp', 0.8);
-        };
-        img.onerror = () => resolve(file);
-      };
-    });
+    try {
+      const mod = await import('../lib/imageCompress');
+      return await mod.compressImage(file, 0.7, 1200);
+    } catch (err) {
+      console.warn('Compression failed, using original file', err);
+      return file;
+    }
   };
 
   /** Upload an array of File objects and return their download URLs */
@@ -141,7 +117,7 @@ export default function PortfolioManager() {
     setShowForm(true);
   };
 
-  const openEditForm = (project: Project) => {
+  const openEditForm = useCallback((project: Project) => {
     setEditingProject(project);
     setForm({
       ...EMPTY_FORM,
@@ -157,7 +133,7 @@ export default function PortfolioManager() {
     setImageMode('upload');
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   const closeForm = () => {
     setShowForm(false);
@@ -246,7 +222,7 @@ export default function PortfolioManager() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Delete this project permanently?')) return;
     try {
       await deleteDoc(doc(db, 'portfolio_projects', id));
@@ -255,9 +231,9 @@ export default function PortfolioManager() {
       console.error('Error deleting project:', err);
       alert('Failed to delete project.');
     }
-  };
+  }, [fetchProjects]);
 
-  const handleToggleFeatured = async (project: Project) => {
+  const handleToggleFeatured = useCallback(async (project: Project) => {
     try {
       await updateDoc(doc(db, 'portfolio_projects', project.id), { featured: !project.featured });
       fetchProjects();
@@ -265,7 +241,97 @@ export default function PortfolioManager() {
       console.error('Error toggling featured:', err);
       alert('Failed to update featured status.');
     }
-  };
+  }, [fetchProjects]);
+
+  const renderedProjects = useMemo(() => {
+    return projects.map(project => {
+      const imgs = getProjectImages(project);
+      return (
+        <tr key={project.id} className="hover:bg-gray-50">
+          {/* Image stack preview */}
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-1">
+              {imgs.slice(0, 3).map((src, si) => (
+                <div
+                  key={si}
+                  className="w-10 h-10 rounded overflow-hidden bg-gray-100 relative group border border-gray-200"
+                  style={{ marginLeft: si > 0 ? '-6px' : '0', zIndex: 3 - si }}
+                >
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <a
+                    href={src} target="_blank" rel="noreferrer"
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ExternalLink className="w-3 h-3 text-white" />
+                  </a>
+                </div>
+              ))}
+              {imgs.length > 3 && (
+                <span className="text-xs font-semibold text-gray-500 ml-1">+{imgs.length - 3}</span>
+              )}
+            </div>
+          </td>
+
+          <td className="px-6 py-4 font-medium text-gray-900 max-w-[160px]">
+            <div className="truncate">{project.title}</div>
+          </td>
+
+          <td className="px-6 py-4 text-gray-600">
+            <div>{project.client}</div>
+            <div className="text-xs text-gray-400">{project.contractor} · {project.date}</div>
+          </td>
+
+          <td className="px-6 py-4">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-orange-100 text-orange-800">
+              {project.category}
+            </span>
+          </td>
+
+          <td className="px-6 py-4">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              {project.type}
+            </span>
+          </td>
+
+          <td className="px-6 py-4 text-center">
+            <button
+              onClick={() => handleToggleFeatured(project)}
+              title={project.featured ? 'Remove from Hero' : 'Feature in Hero'}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                project.featured
+                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  : 'bg-gray-100 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600'
+              }`}
+            >
+              <Star className={`w-3 h-3 ${project.featured ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+              {project.featured ? 'Featured' : 'Set Featured'}
+            </button>
+          </td>
+
+          <td className="px-6 py-4 text-right">
+            <div className="flex items-center justify-end gap-1">
+              {/* Edit */}
+              <button
+                onClick={() => openEditForm(project)}
+                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit Project"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              {/* Delete */}
+              <button
+                onClick={() => handleDelete(project.id)}
+                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete Project"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      );
+    });
+  }, [projects, handleToggleFeatured, openEditForm, handleDelete]);
 
   // ── render ─────────────────────────────────────────────────────────────────
 
@@ -553,93 +619,7 @@ export default function PortfolioManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {projects.map(project => {
-                  const imgs = getProjectImages(project);
-                  return (
-                    <tr key={project.id} className="hover:bg-gray-50">
-                      {/* Image stack preview */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1">
-                          {imgs.slice(0, 3).map((src, si) => (
-                            <div
-                              key={si}
-                              className="w-10 h-10 rounded overflow-hidden bg-gray-100 relative group border border-gray-200"
-                              style={{ marginLeft: si > 0 ? '-6px' : '0', zIndex: 3 - si }}
-                            >
-                              <img src={src} alt="" className="w-full h-full object-cover" />
-                              <a
-                                href={src} target="_blank" rel="noreferrer"
-                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <ExternalLink className="w-3 h-3 text-white" />
-                              </a>
-                            </div>
-                          ))}
-                          {imgs.length > 3 && (
-                            <span className="text-xs font-semibold text-gray-500 ml-1">+{imgs.length - 3}</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 font-medium text-gray-900 max-w-[160px]">
-                        <div className="truncate">{project.title}</div>
-                      </td>
-
-                      <td className="px-6 py-4 text-gray-600">
-                        <div>{project.client}</div>
-                        <div className="text-xs text-gray-400">{project.contractor} · {project.date}</div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-orange-100 text-orange-800">
-                          {project.category}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {project.type}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleToggleFeatured(project)}
-                          title={project.featured ? 'Remove from Hero' : 'Feature in Hero'}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                            project.featured
-                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                              : 'bg-gray-100 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600'
-                          }`}
-                        >
-                          <Star className={`w-3 h-3 ${project.featured ? 'fill-yellow-500 text-yellow-500' : ''}`} />
-                          {project.featured ? 'Featured' : 'Set Featured'}
-                        </button>
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Edit */}
-                          <button
-                            onClick={() => openEditForm(project)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit Project"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleDelete(project.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Project"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {renderedProjects}
               </tbody>
             </table>
           </div>

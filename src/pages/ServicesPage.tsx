@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Navbar from '../components/Navbar';
@@ -85,7 +85,7 @@ const detailedServices = [
 ];
 
 export default function ServicesPage() {
-  const [portfolioImages, setPortfolioImages] = useState<Record<string, string[]>>({});
+
   const [portfolioProjects, setPortfolioProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function ServicesPage() {
           }
         });
 
-        setPortfolioImages(imagesMap);
+
         setPortfolioProjects(projects);
       } catch (err) {
         console.error('Error fetching portfolio images:', err);
@@ -124,6 +124,120 @@ export default function ServicesPage() {
     
     fetchImages();
   }, []);
+
+  const renderedServices = useMemo(() => {
+    return detailedServices.map((service, index) => {
+      const isEven = index % 2 === 0;
+      const Icon = service.icon;
+
+      // Gather images from portfolio projects that match this service by category or type
+      const matchedProjects = portfolioProjects.filter(p => {
+        const cat = String(p.category || '').trim().toLowerCase();
+        const type = String(p.type || '').trim().toLowerCase();
+        const sid = String(service.id || '').trim().toLowerCase();
+        return cat === sid || type === sid || cat.includes(sid) || type.includes(sid);
+      });
+
+      const catImages = matchedProjects.flatMap(p => (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []));
+
+      // Prefer first DB image from matched projects; do not use external fallback images
+      const displayImage = catImages.length > 0 ? catImages[0] : '';
+      
+      return (
+        <div key={service.id} id={service.id} className={`flex flex-col lg:flex-row gap-12 lg:gap-20 items-center ${isEven ? '' : 'lg:flex-row-reverse'}`}>
+          {/* Image Side */}
+          <div className="w-full lg:w-1/2 relative group">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
+              {displayImage ? (
+                <>
+                  <img
+                    src={displayImage}
+                    alt={service.title}
+                    className="w-full h-[450px] object-cover transition-transform duration-1000 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </>
+              ) : (
+                <div className="w-full h-[450px] bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <div className="flex flex-col items-center gap-3">
+                      {[
+                        'Nepal Building Code Compliant',
+                        'NFPA Standards Adherent',
+                        'Govt. of Nepal Registered',
+                        'Pan-Nepal Service Coverage'
+                      ].map((t, i) => (
+                        <div key={i} className="bg-white px-4 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">
+                          {t}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="absolute inset-0 border-[6px] border-white/20 rounded-2xl z-10 m-4 pointer-events-none transition-all duration-500 group-hover:m-2" />
+              
+              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end z-20">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded shadow-lg">
+                  <span className="font-heading font-bold text-xs uppercase tracking-wider text-burgundy">
+                    {catImages.length > 0 ? 'Portfolio Reference' : 'Service Example'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Small Thumbnails */}
+            {catImages.length > 1 && (
+              <div className="flex gap-4 mt-6 overflow-x-auto pb-2 scrollbar-hide">
+                 {catImages.slice(1, 4).map((img, i) => (
+                   <div key={i} className="flex-shrink-0 relative rounded-xl overflow-hidden shadow-md border-2 border-white cursor-pointer hover:border-burgundy transition-colors w-24 h-24">
+                     <img src={img} className="w-full h-full object-cover" alt="Portfolio thumbnail" />
+                   </div>
+                 ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Text Side */}
+          <div className="w-full lg:w-1/2">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-burgundy/10 mb-6 text-burgundy shadow-inner">
+              <Icon className="w-8 h-8" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-heading font-black text-gray-900 mb-5 leading-tight">
+              {service.title}
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-8 text-lg font-light">
+              {service.description}
+            </p>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+              <h3 className="font-heading font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider text-burgundy">Key Offerings</h3>
+              <ul className="space-y-3.5">
+                {service.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-burgundy shrink-0 mt-0.5" />
+                    <span className="text-gray-700 font-medium">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <Link 
+              to="/"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/#contact';
+              }}
+              className="inline-flex items-center justify-center px-8 py-4 bg-burgundy text-white font-bold font-heading uppercase tracking-wider text-sm hover:bg-[#5a131e] transition-all duration-300 rounded shadow-xl shadow-burgundy/20 hover:shadow-burgundy/40 hover:-translate-y-1"
+            >
+              Inquire About This Service
+            </Link>
+          </div>
+        </div>
+      );
+    });
+  }, [portfolioProjects]);
 
   return (
     <div className="min-h-screen bg-ivory flex flex-col">
@@ -144,117 +258,7 @@ export default function ServicesPage() {
           </div>
 
           <div className="space-y-32">
-            {detailedServices.map((service, index) => {
-              const isEven = index % 2 === 0;
-              const Icon = service.icon;
-
-              // Gather images from portfolio projects that match this service by category or type
-              const matchedProjects = portfolioProjects.filter(p => {
-                const cat = String(p.category || '').trim().toLowerCase();
-                const type = String(p.type || '').trim().toLowerCase();
-                const sid = String(service.id || '').trim().toLowerCase();
-                return cat === sid || type === sid || cat.includes(sid) || type.includes(sid);
-              });
-
-              const catImages = matchedProjects.flatMap(p => (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []));
-
-              // Prefer first DB image from matched projects; do not use external fallback images
-              const displayImage = catImages.length > 0 ? catImages[0] : '';
-              
-              return (
-                <div key={service.id} id={service.id} className={`flex flex-col lg:flex-row gap-12 lg:gap-20 items-center ${isEven ? '' : 'lg:flex-row-reverse'}`}>
-                  {/* Image Side */}
-                  <div className="w-full lg:w-1/2 relative group">
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
-                      {displayImage ? (
-                        <>
-                          <img
-                            src={displayImage}
-                            alt={service.title}
-                            className="w-full h-[450px] object-cover transition-transform duration-1000 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-                        </>
-                      ) : (
-                        <div className="w-full h-[450px] bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
-                          <div className="text-center p-6">
-                            <div className="flex flex-col items-center gap-3">
-                              {[
-                                'Nepal Building Code Compliant',
-                                'NFPA Standards Adherent',
-                                'Govt. of Nepal Registered',
-                                'Pan-Nepal Service Coverage'
-                              ].map((t, i) => (
-                                <div key={i} className="bg-white px-4 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">
-                                  {t}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="absolute inset-0 border-[6px] border-white/20 rounded-2xl z-10 m-4 pointer-events-none transition-all duration-500 group-hover:m-2" />
-                      
-                      <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end z-20">
-                        <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded shadow-lg">
-                          <span className="font-heading font-bold text-xs uppercase tracking-wider text-burgundy">
-                            {catImages.length > 0 ? 'Portfolio Reference' : 'Service Example'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Small Thumbnails */}
-                    {catImages.length > 1 && (
-                      <div className="flex gap-4 mt-6 overflow-x-auto pb-2 scrollbar-hide">
-                         {catImages.slice(1, 4).map((img, i) => (
-                           <div key={i} className="flex-shrink-0 relative rounded-xl overflow-hidden shadow-md border-2 border-white cursor-pointer hover:border-burgundy transition-colors w-24 h-24">
-                             <img src={img} className="w-full h-full object-cover" alt="Portfolio thumbnail" />
-                           </div>
-                         ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Text Side */}
-                  <div className="w-full lg:w-1/2">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-burgundy/10 mb-6 text-burgundy shadow-inner">
-                      <Icon className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-heading font-black text-gray-900 mb-5 leading-tight">
-                      {service.title}
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed mb-8 text-lg font-light">
-                      {service.description}
-                    </p>
-                    
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-                      <h3 className="font-heading font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider text-burgundy">Key Offerings</h3>
-                      <ul className="space-y-3.5">
-                        {service.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-burgundy shrink-0 mt-0.5" />
-                            <span className="text-gray-700 font-medium">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    <Link 
-                      to="/"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.location.href = '/#contact';
-                      }}
-                      className="inline-flex items-center justify-center px-8 py-4 bg-burgundy text-white font-bold font-heading uppercase tracking-wider text-sm hover:bg-[#5a131e] transition-all duration-300 rounded shadow-xl shadow-burgundy/20 hover:shadow-burgundy/40 hover:-translate-y-1"
-                    >
-                      Inquire About This Service
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
+            {renderedServices}
           </div>
         </div>
       </main>

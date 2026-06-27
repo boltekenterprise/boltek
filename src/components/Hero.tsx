@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
@@ -13,12 +13,68 @@ interface FeaturedProject {
   images?: string[];
 }
 
+function getFirstImage(project: FeaturedProject): string {
+  if (project.images && project.images.length > 0) return project.images[0];
+  if (project.image) return project.image;
+  return '';
+}
+
+const ProjectCard = ({ project, index }: { project: FeaturedProject; index: number }) => {
+  const src = getFirstImage(project);
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden isolate group shadow-md border border-black/5 bg-[#f7f2ea] w-full h-full hover:-translate-y-0.5 transition-transform duration-300">
+      {src ? (
+        <img
+          src={src}
+          alt={project.title || 'Featured project'}
+          className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+          loading={index < 2 ? 'eager' : 'lazy'}
+          fetchpriority={index === 0 ? 'high' : 'auto'}
+          decoding="async"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-stone-200 flex items-center justify-center">
+          <div className="text-center p-4">
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-burgundy text-white mb-2">BK</div>
+            <div className="text-sm font-semibold text-stone-700">Image unavailable</div>
+            <div className="text-xs text-stone-500">No visual provided</div>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto flex flex-col justify-end p-4 transition-opacity duration-300">
+        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+          {project.type && (
+            <span className="text-[8px] font-bold tracking-wider uppercase bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-sm" style={{ color: '#ED2100' }}>
+              {project.type}
+            </span>
+          )}
+          {project.date && (
+            <span className="text-[9px] font-medium text-white/80 uppercase tracking-wide">
+              {project.date}
+            </span>
+          )}
+        </div>
+        <h3 className="font-sans font-semibold text-xs leading-snug line-clamp-2 mb-1 drop-shadow-md text-white">
+          {project.title}
+        </h3>
+        {project.client && (
+          <div className="flex items-center gap-1.5 text-white/90 text-[10px] font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span className="truncate">{project.client}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function Hero() {
   const [projects, setProjects] = useState<FeaturedProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [slideIndices, setSlideIndices] = useState<Record<number, number>>({});
-  const imageLoadedRef = useRef<Record<number, boolean[]>>({});
-  const [, setImageLoaded] = useState<Record<number, boolean[]>>({});
 
   useEffect(() => {
     const fetchFeaturedProjects = async () => {
@@ -39,122 +95,6 @@ export default function Hero() {
     };
     fetchFeaturedProjects();
   }, []);
-
-  useEffect(() => {
-    if (projects.length === 0) return;
-    const init: Record<number, number> = {};
-    projects.forEach((_, i) => { init[i] = 0; });
-    setSlideIndices(init);
-
-    const timers: ReturnType<typeof setInterval>[] = [];
-    projects.forEach((project, i) => {
-      const imgs = getImages(project);
-      if (imgs.length > 1) {
-        const t = setInterval(() => {
-          setSlideIndices(prev => {
-            const curr = prev[i] ?? 0;
-            const next = (curr + 1) % imgs.length;
-            const loadedForProject = imageLoadedRef.current[i] || [];
-            // only advance if the next image has finished loading
-            if (!loadedForProject[next]) return prev;
-            return { ...prev, [i]: next };
-          });
-        }, 2600 + i * 350);
-        timers.push(t);
-      }
-    });
-    return () => { timers.forEach(clearInterval); };
-  }, [projects]);
-
-  const getImages = (project: FeaturedProject): string[] => {
-    if (project.images && Array.isArray(project.images) && project.images.length > 0)
-      return project.images;
-    if (project.image) return [project.image];
-    return [];
-  };
-
-  const ProjectCard = ({ project, index }: { project: FeaturedProject; index: number }) => {
-    const imgs = getImages(project);
-    const currentIdx = slideIndices[index] ?? 0;
-
-    return (
-      <div className="relative rounded-2xl overflow-hidden isolate group shadow-md border border-black/5 bg-[#f7f2ea] w-full h-full hover:-translate-y-0.5 transition-transform duration-300">
-        {imgs.length > 0 ? (
-          imgs.map((src, si) => (
-            <img
-              key={si}
-              src={src}
-              alt={project.title || 'Featured project'}
-              className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${
-                si === currentIdx ? 'opacity-100' : 'opacity-0'
-              } group-hover:scale-105 transition-transform duration-700`}
-              loading={index < 4 && si === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-              onLoad={() => {
-                // mark this image as loaded for this project index
-                imageLoadedRef.current[index] = imageLoadedRef.current[index] || [];
-                imageLoadedRef.current[index][si] = true;
-                setImageLoaded(prev => {
-                  const next = { ...prev } as Record<number, boolean[]>;
-                  const arr = (next[index] || []).slice();
-                  arr[si] = true;
-                  next[index] = arr;
-                  return next;
-                });
-              }}
-            />
-          ))
-        ) : (
-          <div className="absolute inset-0 bg-stone-200 flex items-center justify-center">
-            <div className="text-center p-4">
-              <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-burgundy text-white mb-2">BK</div>
-              <div className="text-sm font-semibold text-stone-700">Image unavailable</div>
-              <div className="text-xs text-stone-500">No visual provided</div>
-            </div>
-          </div>
-        )}
-
-        {imgs.length > 1 && (
-          <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
-            {imgs.map((_, di) => (
-              <div
-                key={di}
-                className={`rounded-full transition-all duration-300 ${
-                  di === currentIdx ? 'w-2.5 h-1.5 bg-white shadow-md' : 'w-1.5 h-1.5 bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto flex flex-col justify-end p-4 transition-opacity duration-300">
-          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-            {project.type && (
-              <span className="text-[8px] font-bold tracking-wider uppercase bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-sm" style={{ color: '#ED2100' }}>
-                {project.type}
-              </span>
-            )}
-            {project.date && (
-              <span className="text-[9px] font-medium text-white/80 uppercase tracking-wide">
-                {project.date}
-              </span>
-            )}
-          </div>
-          <h3 className="font-sans font-semibold text-xs leading-snug line-clamp-2 mb-1 drop-shadow-md text-white">
-            {project.title}
-          </h3>
-          {project.client && (
-            <div className="flex items-center gap-1.5 text-white/90 text-[10px] font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span className="truncate">{project.client}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <section

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -51,7 +51,7 @@ export default function ProductManager() {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const q = query(collection(db, 'shop_products'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
@@ -65,7 +65,7 @@ export default function ProductManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -89,7 +89,7 @@ export default function ProductManager() {
     setUploadProgress(0);
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = useCallback((product: Product) => {
     setForm({
       title: product.title,
       category: product.category,
@@ -104,7 +104,7 @@ export default function ProductManager() {
     setImageMode('url');
     setEditingId(product.id);
     setShowForm(true);
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,9 +121,17 @@ export default function ProductManager() {
 
       // Handle Image File Upload if in upload mode and a file is selected
       if (imageMode === 'upload' && form.imageFile) {
-        const file = form.imageFile;
-        const fileRef = ref(storage, `products/${Date.now()}_${file.name}`);
-        const uploadTask = uploadBytesResumable(fileRef, file);
+        // compress before upload (70% quality)
+        const origFile = form.imageFile as File;
+        let fileToUpload = origFile;
+        try {
+          const mod = await import('../lib/imageCompress');
+          fileToUpload = await mod.compressImage(origFile, 0.7, 1200);
+        } catch (err) {
+          console.warn('Image compression failed, uploading original', err);
+        }
+        const fileRef = ref(storage, `products/${Date.now()}_${fileToUpload.name}`);
+        const uploadTask = uploadBytesResumable(fileRef, fileToUpload);
 
         finalImageUrl = await new Promise<string>((resolve, reject) => {
           uploadTask.on(
@@ -185,7 +193,7 @@ export default function ProductManager() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
@@ -198,7 +206,53 @@ export default function ProductManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchProducts]);
+
+  const renderedProducts = useMemo(() => {
+    return products.map((product) => (
+      <tr key={product.id} className="hover:bg-gray-50/50">
+        <td className="py-3 px-4">
+          <img
+            src={product.image}
+            alt={product.title}
+            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+          />
+        </td>
+        <td className="py-3 px-4">
+          <span className="font-bold text-gray-900 block">{product.title}</span>
+          <span className="text-xs text-gray-500 line-clamp-1 max-w-sm mt-0.5">
+            {product.details}
+          </span>
+        </td>
+        <td className="py-3 px-4">
+          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+            {product.category}
+          </span>
+        </td>
+        <td className="py-3 px-4 font-medium text-gray-900">
+          {product.price || <span className="text-gray-400 text-xs italic">Not Set</span>}
+        </td>
+        <td className="py-3 px-4 text-right">
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => handleEdit(product)}
+              className="p-1.5 text-gray-600 hover:text-flame-700 hover:bg-gray-100 rounded transition-all"
+              title="Edit Product"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleDelete(product.id)}
+              className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+              title="Delete Product"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ));
+  }, [products, handleEdit, handleDelete]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 admin-theme">
@@ -438,49 +492,7 @@ export default function ProductManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-150">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50/50">
-                  <td className="py-3 px-4">
-                    <img
-                      src={product.image}
-                      alt={product.title}
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="font-bold text-gray-900 block">{product.title}</span>
-                    <span className="text-xs text-gray-500 line-clamp-1 max-w-sm mt-0.5">
-                      {product.details}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-gray-900">
-                    {product.price || <span className="text-gray-400 text-xs italic">Not Set</span>}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="p-1.5 text-gray-600 hover:text-flame-700 hover:bg-gray-100 rounded transition-all"
-                        title="Edit Product"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-all"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {renderedProducts}
             </tbody>
           </table>
         </div>

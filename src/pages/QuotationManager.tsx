@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { useAuth } from '../lib/AuthContext';
@@ -58,12 +58,12 @@ export default function QuotationManager() {
     checkERPNextConnection();
   }, [user]);
 
-  const checkERPNextConnection = async () => {
+  const checkERPNextConnection = useCallback(async () => {
     // TODO: Migrate ERPNext check to Firebase Cloud Functions
     setErpnextAvailable(false);
-  };
+  }, []);
 
-  const fetchQuotations = async () => {
+  const fetchQuotations = useCallback(async () => {
     try {
       const q = query(collection(db, 'quotations'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
@@ -74,7 +74,7 @@ export default function QuotationManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const calculateTotal = () => {
     return form.services.reduce((sum, serviceName) => {
@@ -83,7 +83,7 @@ export default function QuotationManager() {
     }, 0);
   };
 
-  const syncToERPNext = async (quotation: Quotation) => {
+  const syncToERPNext = useCallback(async (quotation: Quotation) => {
     setSyncingId(quotation.id);
     try {
       // TODO: Migrate ERPNext sync to Firebase Cloud Functions
@@ -95,7 +95,7 @@ export default function QuotationManager() {
     } finally {
       setSyncingId(null);
     }
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +160,7 @@ export default function QuotationManager() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Delete this quotation?')) return;
 
     try {
@@ -171,7 +171,95 @@ export default function QuotationManager() {
     } catch (err) {
       console.error('Error deleting:', err);
     }
-  };
+  }, [fetchQuotations]);
+
+  const handleEdit = useCallback((q: Quotation) => {
+    setEditingId(q.id);
+    setShowForm(true);
+    setForm({
+      client_name: q.client_name,
+      client_email: q.client_email,
+      client_phone: q.client_phone,
+      building_type: q.building_type,
+      location: q.location,
+      description: q.description,
+      services: q.services.map((s) => s.name),
+      status: q.status,
+    });
+  }, []);
+
+  const renderedQuotations = useMemo(() => {
+    return quotations.map((q) => (
+      <div
+        key={q.id}
+        className="bg-white border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow"
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h3 className="font-semibold text-gray-900">{q.client_name}</h3>
+              <span
+                className={`text-xs font-medium px-2 py-1 rounded ${
+                  q.status === 'draft'
+                    ? 'bg-gray-100 text-gray-600'
+                    : q.status === 'sent'
+                    ? 'bg-blue-100 text-blue-700'
+                    : q.status === 'accepted'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {q.status.charAt(0).toUpperCase() + q.status.slice(1)}
+              </span>
+              {q.erpnext_id && (
+                <span className="text-xs font-medium px-2 py-1 rounded bg-purple-100 text-purple-700 flex items-center gap-1">
+                  <Link2 className="w-3 h-3" />
+                  {q.erpnext_id}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              {q.building_type} • {q.location}
+            </p>
+            <p className="text-xs text-gray-500">
+              {q.services.length} services • ₨{q.total_amount.toLocaleString()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-heading font-bold text-flame-700">
+              ₨{q.total_amount.toLocaleString()}
+            </span>
+            {erpnextAvailable && q.status === 'sent' && !q.erpnext_id && (
+              <button
+                onClick={() => syncToERPNext(q)}
+                disabled={syncingId === q.id}
+                className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg transition-colors disabled:opacity-50"
+                title="Sync to ERPNext"
+              >
+                {syncingId === q.id ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => handleEdit(q)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Edit2 className="w-4 h-4 text-gray-600" />
+            </button>
+            <button
+              onClick={() => handleDelete(q.id)}
+              className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
+  }, [quotations, erpnextAvailable, syncingId, syncToERPNext, handleEdit, handleDelete]);
 
   if (loading) {
     return (
@@ -409,89 +497,7 @@ export default function QuotationManager() {
             <p className="text-gray-600">No quotations yet</p>
           </div>
         ) : (
-          quotations.map((q) => (
-            <div
-              key={q.id}
-              className="bg-white border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-gray-900">{q.client_name}</h3>
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded ${
-                        q.status === 'draft'
-                          ? 'bg-gray-100 text-gray-600'
-                          : q.status === 'sent'
-                          ? 'bg-blue-100 text-blue-700'
-                          : q.status === 'accepted'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {q.status.charAt(0).toUpperCase() + q.status.slice(1)}
-                    </span>
-                    {q.erpnext_id && (
-                      <span className="text-xs font-medium px-2 py-1 rounded bg-purple-100 text-purple-700 flex items-center gap-1">
-                        <Link2 className="w-3 h-3" />
-                        {q.erpnext_id}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {q.building_type} • {q.location}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {q.services.length} services • ₨{q.total_amount.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-heading font-bold text-flame-700">
-                    ₨{q.total_amount.toLocaleString()}
-                  </span>
-                  {erpnextAvailable && q.status === 'sent' && !q.erpnext_id && (
-                    <button
-                      onClick={() => syncToERPNext(q)}
-                      disabled={syncingId === q.id}
-                      className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg transition-colors disabled:opacity-50"
-                      title="Sync to ERPNext"
-                    >
-                      {syncingId === q.id ? (
-                        <Loader className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Zap className="w-4 h-4" />
-                      )}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setEditingId(q.id);
-                      setShowForm(true);
-                      setForm({
-                        client_name: q.client_name,
-                        client_email: q.client_email,
-                        client_phone: q.client_phone,
-                        building_type: q.building_type,
-                        location: q.location,
-                        description: q.description,
-                        services: q.services.map((s) => s.name),
-                        status: q.status,
-                      });
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(q.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+          renderedQuotations
         )}
       </div>
     </div>
