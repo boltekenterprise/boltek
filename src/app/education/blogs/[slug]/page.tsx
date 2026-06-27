@@ -92,73 +92,90 @@ function readTime(content?: string, excerpt?: string): string {
 
 function renderMarkdownToHtml(md: string): string {
   if (!md) return '';
-  let html = md;
   
-  // Escape HTML tags to prevent cross-site issues
-  html = html
+  // 1. Escape HTML to prevent XSS but preserve safe entities
+  let html = md
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
   
-  // Headers (H3, H2, H1)
-  html = html.replace(/^### (.*?)$/gm, '<h3 class="text-xl font-bold font-heading mt-6 mb-2 text-stone-850">$1</h3>');
-  html = html.replace(/^## (.*?)$/gm, '<h2 class="text-2xl font-black font-heading mt-8 mb-4 border-l-4 border-[#6B1724] pl-3 text-stone-900">$1</h2>');
-  html = html.replace(/^# (.*?)$/gm, '<h1 class="text-3xl font-black font-heading mt-10 mb-6 text-stone-950">$1</h1>');
-  
-  // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // Horizontal rule
-  html = html.replace(/^---$/gm, '<hr class="border-stone-200 my-8" />');
+  // 2. Code Blocks (Expert Formatting for technical blogs/data)
+  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<div class="my-8 rounded-xl overflow-hidden bg-gray-900 shadow-2xl border border-gray-800">
+      <div class="flex items-center px-4 py-2 bg-gray-950 border-b border-gray-800">
+        <div class="flex gap-1.5"><div class="w-3 h-3 rounded-full bg-red-500/80"></div><div class="w-3 h-3 rounded-full bg-yellow-500/80"></div><div class="w-3 h-3 rounded-full bg-green-500/80"></div></div>
+        <span class="ml-4 text-xs font-mono text-gray-400 uppercase tracking-widest">${lang || 'Data'}</span>
+      </div>
+      <pre class="p-5 overflow-x-auto text-sm font-mono text-gray-300 leading-relaxed"><code>${code.trim()}</code></pre>
+    </div>`;
+  });
 
-  // Blockquotes
-  html = html.replace(/^&gt; (.*?)$/gm, '<blockquote class="border-l-4 border-[#6B1724] bg-red-50/50 p-4 rounded-r-lg italic my-4">$1</blockquote>');
+  // 3. Inline Code
+  html = html.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded-md bg-stone-100 text-[#6B1724] font-mono text-[0.9em] font-semibold border border-stone-200">$1</code>');
 
-  // Tables
+  // 4. Headers (H3, H2, H1)
+  html = html.replace(/^### (.*?)$/gm, '<h3 class="text-2xl font-bold font-heading mt-10 mb-4 text-stone-900">$1</h3>');
+  html = html.replace(/^## (.*?)$/gm, '<h2 class="text-3xl font-black font-heading mt-12 mb-6 border-b-2 border-stone-100 pb-2 text-stone-900 flex items-center gap-3"><span class="w-2 h-8 bg-[#6B1724] rounded-full inline-block"></span>$1</h2>');
+  html = html.replace(/^# (.*?)$/gm, '<h1 class="text-4xl font-black font-heading mt-14 mb-8 text-stone-950">$1</h1>');
+  
+  // 5. Bold & Italic
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="font-bold italic text-stone-900">$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-stone-900">$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em class="italic text-stone-700">$1</em>');
+  
+  // 6. Horizontal rule
+  html = html.replace(/^---$/gm, '<div class="w-full flex justify-center my-12"><div class="w-24 h-1 bg-stone-200 rounded-full"></div></div>');
+
+  // 7. Blockquotes (Expert Callouts)
+  html = html.replace(/^&gt; (.*?)$/gm, '<blockquote class="relative border-l-4 border-[#6B1724] bg-gradient-to-r from-red-50/80 to-transparent p-6 rounded-r-2xl italic my-8 text-stone-700 font-medium shadow-sm"><span class="absolute top-2 left-2 text-4xl text-[#6B1724]/10 font-serif font-black">"</span><div class="relative z-10">$1</div></blockquote>');
+
+  // 8. Tables (Data presentation)
   const lines = html.split('\n');
   let inTable = false;
   const parsedLines = lines.map(line => {
     const isRow = line.trim().startsWith('|') && line.trim().endsWith('|');
     if (isRow) {
-      if (line.includes('---|') || line.includes(':---|') || line.includes('---:|')) {
-        return '';
-      }
+      if (line.includes('---|') || line.includes(':---|') || line.includes('---:|')) return '';
       const cells = line.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
       const cellTag = !inTable ? 'th' : 'td';
-      const cellClass = !inTable ? 'px-4 py-2 bg-stone-100 font-bold border border-stone-200 text-left' : 'px-4 py-2 border border-stone-200';
-      const row = `<tr>${cells.map(c => `<${cellTag} class="${cellClass}">${c}</${cellTag}>`).join('')}</tr>`;
+      const cellClass = !inTable 
+        ? 'px-6 py-4 bg-stone-900 text-white font-semibold text-left tracking-wider text-sm uppercase' 
+        : 'px-6 py-4 border-b border-stone-100 text-stone-600 text-sm';
+      const row = `<tr class="${!inTable ? '' : 'hover:bg-stone-50 transition-colors'}">${cells.map(c => `<${cellTag} class="${cellClass}">${c}</${cellTag}>`).join('')}</tr>`;
       
       if (!inTable) {
         inTable = true;
-        return `<div class="overflow-x-auto my-6"><table class="min-w-full border-collapse border border-stone-200 text-sm"><thead>${row}</thead><tbody>`;
+        return `<div class="overflow-x-auto my-10 rounded-xl shadow-lg border border-stone-200"><table class="min-w-full border-collapse text-left"><thead>${row}</thead><tbody class="bg-white">`;
       } else {
         return row;
       }
     } else {
       if (inTable) {
         inTable = false;
-        return '</tbody></table></div>' + '\n' + line;
+        return '</tbody></table></div>\n' + line;
       }
       return line;
     }
   });
   html = parsedLines.filter(l => l !== '').join('\n');
 
-  // Bullet Lists
-  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-4 list-disc text-stone-600 my-1">$1</li>');
-  html = html.replace(/(<li.*?>.*?<\/li>\n?)+/g, (match) => `<ul class="my-4 space-y-1">${match}</ul>`);
+  // 9. Bullet Lists (Graceful spacing)
+  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-6 pl-2 list-disc marker:text-[#6B1724] text-stone-600 my-2 leading-relaxed">$1</li>');
+  html = html.replace(/(<li.*?>.*?<\/li>\n?)+/g, (match) => `<ul class="my-6 space-y-2 bg-stone-50/50 p-6 rounded-2xl border border-stone-100">${match}</ul>`);
 
-  // Paragraphs
-  const finalLines = html.split('\n');
-  const processed = finalLines.map(line => {
-    const trimmed = line.trim();
+  // 10. Paragraphs (Split by double newline for accurate plain text rendering)
+  const blocks = html.split(/\n\n+/);
+  const processed = blocks.map(block => {
+    const trimmed = block.trim();
     if (trimmed && !trimmed.startsWith('<') && !trimmed.endsWith('>')) {
-      return `<p class="text-stone-600 leading-relaxed text-base my-4">${trimmed}</p>`;
+      // Allow single newlines inside a paragraph to become <br>
+      const formattedText = trimmed.replace(/\n/g, '<br/>');
+      return `<p class="text-stone-600 leading-[1.8] text-[1.1rem] my-6 font-light tracking-wide">${formattedText}</p>`;
     }
-    return line;
+    return block;
   });
   
-  return processed.join('\n');
+  return processed.join('\n\n');
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
