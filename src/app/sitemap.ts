@@ -49,15 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let shopRoutes: MetadataRoute.Sitemap = [];
   try {
     const snap = await getDocs(collection(db, 'shop_products'));
-    shopRoutes = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
+    shopRoutes = snap.docs.map((doc) => ({
         url: `${baseUrl}/shop/${doc.id}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,
         priority: 0.7,
-      };
-    });
+      }));
   } catch (err) {
     console.error('Error generating shop sitemap paths:', err);
   }

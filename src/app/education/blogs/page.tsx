@@ -18,7 +18,7 @@ interface Blog {
   category?: string;
   excerpt?: string;
   image?: string;
-  createdAt?: { seconds: number } | any;
+  createdAt?: { seconds: number } | unknown;
 }
 
 async function getBlogs() {

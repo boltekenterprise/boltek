@@ -138,6 +138,7 @@ export default function Portfolio({ initialProjects }: PortfolioProps) {
       </div>
     );
   });
+  PortfolioCard.displayName = 'PortfolioCard';
 
   const [allProjects, setAllProjects] = useState<Project[]>(initialProjects || []);
   const [loading, setLoading]         = useState(!initialProjects);

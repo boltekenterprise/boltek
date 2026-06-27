@@ -17,7 +17,7 @@ interface Blog {
   excerpt?: string;
   content?: string;
   image?: string;
-  createdAt?: { seconds: number } | any;
+  createdAt?: { seconds: number } | unknown;
 }
 
 async function getBlogData(slug: string): Promise<Blog | null> {
@@ -76,10 +76,11 @@ export async function generateMetadata(
   };
 }
 
-function formatDate(value: any): string {
+function formatDate(value: unknown): string {
   try {
     if (!value) return '';
-    const ts = value.seconds ? value.seconds * 1000 : new Date(value).getTime();
+    const val = value as { seconds?: number };
+    const ts = val.seconds ? val.seconds * 1000 : new Date(value as string | number | Date).getTime();
     return new Date(ts).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   } catch { return ''; }
 }
