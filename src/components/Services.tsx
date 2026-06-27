@@ -1,6 +1,8 @@
+"use client";
 import { useEffect, useRef } from 'react';
 import { Wrench, GraduationCap, Flame, Truck, ArrowRight, ShieldCheck } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const services = [
   {
@@ -115,10 +117,10 @@ export default function Services() {
         </div>
 
         {/* ── View All Details Button ── */}
-        {useLocation().pathname === '/' && (
+        {usePathname() === '/' && (
           <div className="text-center mt-12 mb-8 animate-on-scroll">
             <Link
-              to="/services"
+              href="/services"
               className="inline-flex items-center justify-center gap-2 font-bold font-heading px-8 py-3.5 text-xs tracking-wider uppercase border transition-all duration-200 hover:scale-105 shadow-md hover:shadow-xl"
               style={{ color: '#6B1724', borderColor: '#6B1724' }}
               onMouseEnter={e => {

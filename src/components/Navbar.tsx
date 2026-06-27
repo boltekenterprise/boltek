@@ -1,6 +1,7 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { usePathname, useRouter } from 'next/navigation';
 
 const navLinks = [
   { label: 'Home',      href: '/' },
@@ -14,8 +15,8 @@ const navLinks = [
 export default function Navbar() {
   const [isOpen, setIsOpen]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location  = useLocation();
-  const navigate  = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -26,8 +27,8 @@ export default function Navbar() {
   const handleNavClick = (href: string) => {
     setIsOpen(false);
     if (href.startsWith('#')) {
-      if (location.pathname !== '/') {
-        navigate('/');
+      if (pathname !== '/') {
+        router.push('/');
         setTimeout(() => {
           document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -35,7 +36,7 @@ export default function Navbar() {
         document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
-      navigate(href);
+      router.push(href);
     }
   };
 
@@ -63,7 +64,7 @@ export default function Navbar() {
                   key={link.href}
                   onClick={() => handleNavClick(link.href)}
                   className={`nav-link-underline text-xs font-bold font-heading tracking-wider uppercase transition-colors ${
-                    location.pathname === link.href
+                    pathname === link.href
                       ? 'text-[#6B1724] active'
                       : 'text-[#111111] hover:text-[#6B1724]'
                   }`}
@@ -97,7 +98,7 @@ export default function Navbar() {
               key={link.href}
               onClick={() => handleNavClick(link.href)}
               className={`text-left px-4 py-3 text-xs font-bold font-heading tracking-wider uppercase transition-colors ${
-                location.pathname === link.href
+                pathname === link.href
                   ? 'bg-burgundy/10 text-burgundy'
                   : 'text-[#111111] hover:bg-burgundy/5 hover:text-burgundy'
               }`}

@@ -1,7 +1,8 @@
+"use client";
 import { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface FeaturedProject {
   id: string;
@@ -30,7 +31,7 @@ const ProjectCard = ({ project, index }: { project: FeaturedProject; index: numb
           alt={project.title || 'Featured project'}
           className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
           loading={index < 2 ? 'eager' : 'lazy'}
-          fetchpriority={index === 0 ? 'high' : 'auto'}
+          fetchPriority={index === 0 ? 'high' : 'auto'}
           decoding="async"
         />
       ) : (
@@ -151,7 +152,7 @@ export default function Hero() {
             <div className="flex-1 flex flex-col items-center justify-center text-center rounded-3xl border border-dashed border-burgundy/20 bg-white/50">
               <div className="text-4xl mb-2">⭐</div>
               <p className="text-gray-500 text-sm font-medium">No featured projects yet.</p>
-              <Link to="/admin" className="mt-4 text-xs font-bold text-burgundy border border-burgundy px-4 py-2 hover:bg-burgundy hover:text-white transition-colors rounded-full">
+              <Link href="/job" className="mt-4 text-xs font-bold text-burgundy border border-burgundy px-4 py-2 hover:bg-burgundy hover:text-white transition-colors rounded-full">
                 Go to Admin Portal
               </Link>
             </div>

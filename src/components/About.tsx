@@ -1,6 +1,7 @@
+"use client";
 import { useEffect, useRef, useState } from 'react';
 import { Target, Eye, CheckCircle, Award, MapPin, Globe, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
@@ -138,7 +139,7 @@ export default function About() {
                 <div className="section-divider" />
               </div>
               <Link
-                to="/about"
+                href="/about"
                 className="group flex items-center gap-2 text-xs font-bold tracking-wider font-heading uppercase transition-colors whitespace-nowrap"
                 style={{ color: '#6B1724' }}
               >

@@ -1,7 +1,8 @@
+"use client";
 import React from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { Loader } from 'lucide-react';
-import Login from '../pages/Login';
+import Login from '../admin-pages/Login';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

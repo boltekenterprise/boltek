@@ -3,9 +3,9 @@
  * Connects to ERPNext server for inventory, quotations, and accounting
  */
 
-const ERPNEXT_BASE_URL = import.meta.env.VITE_ERPNEXT_URL || '';
-const ERPNEXT_API_KEY = import.meta.env.VITE_ERPNEXT_API_KEY || '';
-const ERPNEXT_API_SECRET = import.meta.env.VITE_ERPNEXT_API_SECRET || '';
+const ERPNEXT_BASE_URL = process.env.VITE_ERPNEXT_URL || process.env.NEXT_PUBLIC_VITE_ERPNEXT_URL || '';
+const ERPNEXT_API_KEY = process.env.VITE_ERPNEXT_API_KEY || process.env.NEXT_PUBLIC_VITE_ERPNEXT_API_KEY || '';
+const ERPNEXT_API_SECRET = process.env.VITE_ERPNEXT_API_SECRET || process.env.NEXT_PUBLIC_VITE_ERPNEXT_API_SECRET || '';
 
 interface ERPNextResponse<T> {
   data: T;
@@ -202,7 +202,7 @@ class ERPNextClient {
       }
 
       // Create new customer
-      const createResponse = await this.request('POST', 'Customer', {
+      const createResponse = await this.request<any>('POST', 'Customer', {
         doctype: 'Customer',
         customer_name: name,
         email_id: email,

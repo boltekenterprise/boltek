@@ -1,27 +1,33 @@
+"use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { Calendar, Building2, ArrowRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
-export default function Portfolio() {
+interface Project {
+  id: string;
+  category: string;
+  type: string;
+  image: string;
+  images?: string[];
+  title: string;
+  client: string;
+  date: string;
+  createdAt?: { seconds: number };
+}
+
+interface PortfolioProps {
+  initialProjects?: Project[];
+}
+
+export default function Portfolio({ initialProjects }: PortfolioProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const isHomePage = pathname === '/';
 
   const [visibleCount, setVisibleCount] = useState(isHomePage ? 8 : 1000);
-
-  interface Project {
-    id: string;
-    category: string;
-    type: string;
-    image: string;
-    images?: string[];
-    title: string;
-    client: string;
-    date: string;
-    createdAt?: { seconds: number };
-  }
 
   const getImages = (p: Project) => {
     if (p.images && p.images.length > 0) return p.images;
@@ -71,7 +77,7 @@ export default function Portfolio() {
                   si === currentIdx ? 'opacity-100' : 'opacity-0'
                 } group-hover:scale-110 transition-[transform] duration-700`}
                 loading={i < 4 && si === 0 ? "eager" : "lazy"}
-                fetchpriority={i < 2 && si === 0 ? "high" : "auto"}
+                fetchPriority={i < 2 && si === 0 ? "high" : "auto"}
                 decoding="async"
                 onLoad={() => {
                   imageLoadedRef.current[si] = true;
@@ -133,8 +139,8 @@ export default function Portfolio() {
     );
   });
 
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [allProjects, setAllProjects] = useState<Project[]>(initialProjects || []);
+  const [loading, setLoading]         = useState(!initialProjects);
   // Do not default to an external internet image for the background.
   // Only use a local/background path returned from the CMS (starting with '/')
   const [bgUrl, setBgUrl] = useState('');
@@ -159,6 +165,7 @@ export default function Portfolio() {
   }, []);
 
   useEffect(() => {
+    if (initialProjects) return;
     const fetchProjects = async () => {
       try {
         const snap = await getDocs(collection(db, 'portfolio_projects'));
@@ -177,7 +184,7 @@ export default function Portfolio() {
       }
     };
     fetchProjects();
-  }, []);
+  }, [initialProjects]);
 
 
 
@@ -235,7 +242,7 @@ export default function Portfolio() {
           <div className="text-center py-16">
             <p className="text-gray-400 text-base">No projects found yet.</p>
             <p className="text-gray-500 text-sm mt-1">Add projects through the admin portal to see them here.</p>
-            <Link to="/portfolio" className="inline-block mt-4 text-sm font-semibold hover:underline" style={{ color: '#6B1724' }}>
+            <Link href="/portfolio" className="inline-block mt-4 text-sm font-semibold hover:underline" style={{ color: '#6B1724' }}>
               View Portfolio Page →
             </Link>
           </div>
@@ -290,7 +297,7 @@ export default function Portfolio() {
         {isHomePage ? (
           <div className="text-center mt-12 mb-4 animate-on-scroll">
             <Link
-              to="/portfolio"
+              href="/portfolio"
               className="inline-flex items-center justify-center gap-2 font-bold font-heading px-8 py-3.5 text-xs tracking-wider uppercase border transition-all duration-200 hover:scale-105 shadow-md hover:shadow-xl bg-white"
               style={{ color: '#6B1724', borderColor: '#6B1724' }}
               onMouseEnter={e => {

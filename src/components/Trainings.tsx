@@ -1,6 +1,8 @@
+"use client";
 import { useEffect, useRef, useState } from 'react';
 import { PlayCircle, BookOpen, Share2, Calendar, ArrowRight, ShieldAlert } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
@@ -23,8 +25,8 @@ interface BlogItem {
 }
 export default function Trainings() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
   const [pastTrainings, setPastTrainings] = useState<TrainingProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [latestBlog, setLatestBlog] = useState<BlogItem | null>(null);
@@ -164,7 +166,7 @@ export default function Trainings() {
                 </div>
                 <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Fire Safety Trainings</h4>
                 <p className="text-sm text-stone-600 mb-6 leading-relaxed">Structured courses covering NFPA fundamentals, evacuation drills, and hands-on extinguisher practice.</p>
-                <Link to="/education/trainings" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                <Link href="/education/trainings" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
                   Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -184,7 +186,7 @@ export default function Trainings() {
                 ) : (
                   <p className="text-sm text-stone-600 mb-6 leading-relaxed">In-depth guides on NFPA compliance, fire hazard mitigation, and the latest in fire suppression technology.</p>
                 )}
-                <Link to="/education/blogs" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                <Link href="/education/blogs" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
                   Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -196,7 +198,7 @@ export default function Trainings() {
                 </div>
                 <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Video Resources</h4>
                 <p className="text-sm text-stone-600 mb-6 leading-relaxed">Visual tutorials on operating fire extinguishers, system maintenance, and proper evacuation protocols.</p>
-                <Link to="/education/videos" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
+                <Link href="/education/videos" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
                   Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -208,17 +210,17 @@ export default function Trainings() {
                 </div>
                 <h4 className="font-heading font-bold text-xl mb-3">Social Awareness</h4>
                 <p className="text-sm text-white/80 mb-6 leading-relaxed">Join our community campaigns. Share life-saving tips, drill updates, and community safety initiatives.</p>
-                <Link to="/education/social" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
+                <Link href="/education/social" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
                   Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
           </div>
 
           {/* View All Details Button */}
-          {location.pathname === '/' && (
+          {isHomePage && (
             <div className="text-center mt-16 animate-on-scroll">
               <Link
-                to="/education"
+                href="/education"
                 className="inline-flex items-center justify-center gap-2 font-bold font-heading px-8 py-3.5 text-xs tracking-wider uppercase border transition-all duration-200 hover:scale-105 shadow-md hover:shadow-xl bg-white"
                 style={{ color: '#6B1724', borderColor: '#6B1724' }}
                 onMouseEnter={e => {

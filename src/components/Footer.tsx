@@ -1,3 +1,4 @@
+"use client";
 import { Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
 
 const footerLinks = {

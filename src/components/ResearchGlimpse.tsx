@@ -1,5 +1,6 @@
+"use client";
 import { useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { BookOpen, FileText, ArrowRight, Download, Award } from 'lucide-react';
 
 const resources = [
@@ -59,7 +60,7 @@ export default function ResearchGlimpse() {
             </p>
           </div>
           <Link
-            to="/research"
+            href="/research"
             className="group flex items-center gap-2 text-sm font-semibold text-[#6B1724] hover:text-white border border-[#6B1724] hover:bg-[#6B1724] px-4 py-2 transition-all whitespace-nowrap"
           >
             Explore Knowledge Base <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -86,7 +87,7 @@ export default function ResearchGlimpse() {
                 <div className="pt-4 border-t border-burgundy/10 flex items-center justify-between text-xs text-stone-500">
                   <span>{res.format}</span>
                   <Link
-                    to="/research"
+                    href="/research"
                     className="flex items-center gap-1.5 text-[#6B1724] hover:text-[#ED2100] transition-colors font-semibold"
                   >
                     <Download className="w-3.5 h-3.5" />
