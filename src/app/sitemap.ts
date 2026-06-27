@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export const revalidate = 3600; // Cache sitemap for 1 hour
+export const revalidate = 60; // Cache sitemap for 1 minute
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://boltekenterprise.com';

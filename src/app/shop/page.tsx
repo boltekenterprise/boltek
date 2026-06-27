@@ -3,7 +3,7 @@ import { db } from "@/lib/firebase";
 import ShopPage from "@/admin-pages/ShopPage";
 import { Metadata } from "next";
 
-export const revalidate = 3600; // ISR: refresh every hour
+export const revalidate = 60; // ISR: refresh every 1 minute
 
 export const metadata: Metadata = {
   title: 'Fire Fighting Equipment Shop Nepal | Fire Extinguishers & Alarms | BolteK',

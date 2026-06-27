@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Settings, HelpCircle, ShieldAlert, Award } from 'lucide-react';
 import { Metadata } from "next";
 
-export const revalidate = 3600; // ISR: refresh every hour
+export const revalidate = 60; // ISR: refresh every 1 minute
 
 interface Product {
   title: string;

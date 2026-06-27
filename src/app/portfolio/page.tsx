@@ -5,7 +5,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from "@/lib/firebase";
 import { Metadata } from "next";
 
-export const revalidate = 3600; // ISR: refresh every hour
+export const revalidate = 60; // ISR: refresh every 1 minute
 
 export const metadata: Metadata = {
   title: 'Fire Fighting System Projects & Clients in Nepal | BolteK Portfolio',
