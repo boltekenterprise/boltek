@@ -85,25 +85,130 @@ export default function Trainings() {
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
-            <span className="text-[#6B1724] text-xs font-bold uppercase tracking-[0.2em] font-heading">
-              Knowledge & Preparedness
+            <span className="text-[#6B1724] text-xs font-bold uppercase tracking-[0.25em] font-heading">
+              Our Educational Mission
             </span>
             <h2 className="font-heading font-black text-4xl sm:text-5xl text-stone-900 mt-3 mb-5 leading-[1.15]">
-              Education &amp; <span className="text-[#6B1724]">Resources</span>
+              Spreading Fire <span className="text-[#6B1724]">Safety Awareness</span>
             </h2>
             <div className="section-divider mx-auto mb-5" />
             <p className="text-stone-600 text-base leading-relaxed font-light">
-              Empowering communities and corporations through elite fire safety training, comprehensive educational resources, and proactive awareness programs.
+              BolteK is committed to building a fire-safe nation. Through corporate workshops, public tutorials, community campaigns, and expert articles, we empower individuals to prevent, respond to, and mitigate fire hazards.
             </p>
           </div>
 
-          {/* Main Focus: Fire Safety Training Portfolio (Hidden on Homepage) */}
+          {/* Grid for the 4 Educational Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 animate-on-scroll">
+              
+              {/* Pillar 1: Writing Blog Posts */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-all duration-300 group flex flex-col justify-between rounded-xl">
+                <div>
+                  <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors rounded-lg">
+                    <BookOpen className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-heading font-bold text-2xl text-stone-900 mb-3">1. Safety Blogs & Articles</h4>
+                  <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+                    We write regular, in-depth guides covering NFPA standards, Nepal Building Codes, fire protection compliance, and daily safety tips.
+                  </p>
+                  
+                  {/* Latest Blog Card Integration */}
+                  {latestBlog && (
+                    <div className="border border-stone-100 bg-[#fbfbf9] p-4 rounded-lg mb-6 group-hover:border-burgundy/20 transition-all">
+                      <div className="flex gap-4">
+                        {latestBlog.image && (
+                          <img src={latestBlog.image} alt={latestBlog.title} className="w-20 h-20 object-cover rounded-md flex-shrink-0" />
+                        )}
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#ED2100]">Latest Post</span>
+                          <h5 className="font-semibold text-sm text-stone-900 line-clamp-1 mb-1">{latestBlog.title}</h5>
+                          <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">{latestBlog.excerpt}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <Link href="/education/blogs" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                  Read Articles <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+
+              {/* Pillar 2: Training People */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-all duration-300 group flex flex-col justify-between rounded-xl">
+                <div>
+                  <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors rounded-lg">
+                    <ShieldAlert className="w-7 h-7 text-[#ED2100]" />
+                  </div>
+                  <h4 className="font-heading font-bold text-2xl text-stone-900 mb-3">2. Fire Safety Trainings</h4>
+                  <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+                    We conduct structured corporate and community training programs covering fire extinguisher operations, exit routes mapping, and safety drills.
+                  </p>
+                  
+                  <div className="bg-stone-50 p-4 rounded-lg text-xs text-stone-600 mb-4 space-y-2">
+                    <div className="flex items-center gap-2">✓ Evacuation Drill Orchestration</div>
+                    <div className="flex items-center gap-2">✓ First Responder Certified Training</div>
+                    <div className="flex items-center gap-2">✓ Hands-on Extinguisher Operations</div>
+                  </div>
+                </div>
+                
+                <Link href="/education/trainings" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                  Explore Training details <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+
+              {/* Pillar 3: Videos & Tutorials */}
+              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-all duration-300 group flex flex-col justify-between rounded-xl">
+                <div>
+                  <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors rounded-lg">
+                    <PlayCircle className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-heading font-bold text-2xl text-stone-900 mb-3">3. Videos & Tutorials</h4>
+                  <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+                    Short tutorials, maintenance guidance, and simulation videos visualising immediate safety measures, evacuation protocols, and product operations.
+                  </p>
+                  
+                  <div className="bg-stone-50 p-4 rounded-lg text-xs text-stone-600 mb-4 space-y-2">
+                    <div className="flex items-center gap-2">▶ How to Operate a Fire Extinguisher (PASS Method)</div>
+                    <div className="flex items-center gap-2">▶ Maintain Hydrants & Sprinkler Networks</div>
+                  </div>
+                </div>
+                
+                <Link href="/education/videos" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                  Watch Video Library <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+
+              {/* Pillar 4: Making Community */}
+              <div className="bg-[#6B1724] p-8 shadow-[0_4px_20px_rgba(107,23,36,0.1)] hover:shadow-xl transition-all duration-300 group flex flex-col justify-between text-white rounded-xl">
+                <div>
+                  <div className="w-14 h-14 bg-white/10 flex items-center justify-center mb-6 text-white group-hover:bg-white group-hover:text-[#6B1724] transition-colors rounded-lg">
+                    <Share2 className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-heading font-bold text-2xl mb-3">4. Community Campaigns</h4>
+                  <p className="text-sm text-white/80 mb-6 leading-relaxed">
+                    Promoting community-driven campaigns to make neighborhoods safer. Share safety advice, participate in neighborhood drills, and join awareness groups.
+                  </p>
+                  
+                  <div className="bg-white/5 p-4 rounded-lg text-xs text-white/90 mb-4 space-y-2">
+                    <div>📢 Safety campaigns on local media</div>
+                    <div>🤝 Evacuation safety support groups</div>
+                  </div>
+                </div>
+                
+                <Link href="/education/social" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-ivory transition-colors mt-4">
+                  Join Campaigns <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+
+          </div>
+
+          {/* Past Trainings Section (Hidden on Homepage) */}
           {!isHomePage && (
-            <div className="mb-20 animate-on-scroll">
+            <div className="mt-20 animate-on-scroll">
               <div className="flex items-center justify-between mb-8 border-b border-burgundy/10 pb-4">
                 <h3 className="font-heading font-bold text-2xl text-stone-900 flex items-center gap-3">
                   <ShieldAlert className="w-8 h-8 text-[#ED2100]" />
-                  Elite Fire Safety Training
+                  Recent Public & Corporate Drills
                 </h3>
               </div>
               
@@ -121,24 +226,24 @@ export default function Trainings() {
                   pastTrainings.map((t, i) => {
                     const displayImg = t.images && t.images.length > 0 ? t.images[0] : t.image;
                     return (
-                    <div key={t.id || i} className="group relative bg-white border border-burgundy/10 overflow-hidden shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-xl transition-all duration-300">
+                    <div key={t.id || i} className="group relative bg-white border border-burgundy/10 overflow-hidden shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-xl transition-all duration-300 rounded-xl">
                       <div className="h-56 overflow-hidden relative bg-stone-100">
                         {displayImg ? (
-                          <img src={displayImg} alt={t.title} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                          <img src={displayImg} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <div className="text-center p-3">
                               <div className="flex flex-col items-center gap-3">
-                                {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered','Pan-Nepal Service Coverage'].map((t,i)=>(
+                                {['Nepal Building Code Compliant','NFPA Standards Adherent','Govt. of Nepal Registered'].map((t,i)=>(
                                   <div key={i} className="bg-white px-3 py-2 rounded shadow-sm text-sm font-semibold text-burgundy">{t}</div>
                                 ))}
                               </div>
                             </div>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4 text-white">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#ED2100] bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#ED2100] bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-2">
                             <Calendar className="w-3 h-3" /> {t.date}
                           </p>
                           <h4 className="font-heading font-bold text-lg leading-tight drop-shadow-md text-white line-clamp-2">{t.title}</h4>
@@ -156,65 +261,6 @@ export default function Trainings() {
               </div>
             </div>
           )}
-
-          {/* Resources Grid (Blogs, Videos, Social) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-on-scroll">
-              {/* Trainings Card */}
-              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
-                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
-                  <ShieldAlert className="w-7 h-7 text-[#ED2100]" />
-                </div>
-                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Fire Safety Trainings</h4>
-                <p className="text-sm text-stone-600 mb-6 leading-relaxed">Structured courses covering NFPA fundamentals, evacuation drills, and hands-on extinguisher practice.</p>
-                <Link href="/education/trainings" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
-                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-
-              {/* Blogs */}
-              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
-                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
-                  <BookOpen className="w-7 h-7" />
-                </div>
-                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Safety Blogs & Articles</h4>
-                {latestBlog ? (
-                  <div className="mb-4">
-                    {latestBlog.image && <img src={latestBlog.image} alt={latestBlog.title} className="w-full h-36 object-cover rounded mb-3" />}
-                    <h5 className="font-semibold text-sm text-stone-900 mb-1 line-clamp-2">{latestBlog.title}</h5>
-                    <p className="text-sm text-stone-600 mb-3 line-clamp-3">{latestBlog.excerpt}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-stone-600 mb-6 leading-relaxed">In-depth guides on NFPA compliance, fire hazard mitigation, and the latest in fire suppression technology.</p>
-                )}
-                <Link href="/education/blogs" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
-                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-
-              {/* Videos */}
-              <div className="bg-white p-8 border border-burgundy/10 shadow-[0_4px_20px_rgba(107,23,36,0.04)] hover:shadow-lg transition-shadow group">
-                <div className="w-14 h-14 bg-burgundy/5 flex items-center justify-center mb-6 text-[#6B1724] group-hover:bg-[#6B1724] group-hover:text-white transition-colors">
-                  <PlayCircle className="w-7 h-7" />
-                </div>
-                <h4 className="font-heading font-bold text-xl text-stone-900 mb-3">Video Resources</h4>
-                <p className="text-sm text-stone-600 mb-6 leading-relaxed">Visual tutorials on operating fire extinguishers, system maintenance, and proper evacuation protocols.</p>
-                <Link href="/education/videos" className="text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] flex items-center gap-1">
-                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-
-              {/* Social Awareness */}
-              <div className="bg-[#6B1724] p-8 shadow-md hover:shadow-lg transition-shadow group text-white">
-                <div className="w-14 h-14 bg-white/10 flex items-center justify-center mb-6 text-white group-hover:bg-white group-hover:text-[#6B1724] transition-colors">
-                  <Share2 className="w-7 h-7" />
-                </div>
-                <h4 className="font-heading font-bold text-xl mb-3">Social Awareness</h4>
-                <p className="text-sm text-white/80 mb-6 leading-relaxed">Join our community campaigns. Share life-saving tips, drill updates, and community safety initiatives.</p>
-                <Link href="/education/social" className="text-xs font-bold uppercase tracking-wider text-white hover:text-ivory flex items-center gap-1">
-                  Read more <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-          </div>
 
           {/* View All Details Button */}
           {isHomePage && (
