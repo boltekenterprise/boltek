@@ -5,18 +5,16 @@ import { LogOut, AlertCircle, Loader, FileText, ListTodo, Settings, BarChart3, B
 import BlogManager from './BlogManager';
 import QuotationManager from './QuotationManager';
 import TaskManager from './TaskManager';
-import ERPModule from './ERPModule';
 import RoleBasedDashboard from './RoleBasedDashboard';
 import PortfolioManager from './PortfolioManager';
 import ProductManager from './ProductManager';
 
-type TabType = 'dashboard' | 'quotations' | 'tasks' | 'erp' | 'portfolio' | 'blogs' | 'products';
+type TabType = 'dashboard' | 'quotations' | 'tasks' | 'portfolio' | 'blogs' | 'products';
 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { id: 'quotations', label: 'Quotations', icon: FileText },
   { id: 'tasks', label: 'Tasks', icon: ListTodo },
-  { id: 'erp', label: 'ERP System', icon: Settings },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'blogs', label: 'Blogs', icon: BookOpen },
   { id: 'products', label: 'Shop Products', icon: ShoppingBag },
@@ -195,7 +193,6 @@ export default function JobPage() {
         {activeTab === 'dashboard' && <RoleBasedDashboard />}
         {activeTab === 'quotations' && <QuotationManager />}
         {activeTab === 'tasks' && <TaskManager />}
-        {activeTab === 'erp' && <ERPModule />}
         {activeTab === 'portfolio' && <PortfolioManager />}
         {activeTab === 'blogs' && <BlogManager />}
         {activeTab === 'products' && <ProductManager />}
