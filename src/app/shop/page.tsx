@@ -8,6 +8,7 @@ export const revalidate = 3600; // ISR: refresh every hour
 export const metadata: Metadata = {
   title: 'Fire Fighting Equipment Shop Nepal | Fire Extinguishers & Alarms | BolteK',
   description: 'Buy certified fire fighting equipment in Nepal. Premium fire extinguishers, UL-listed fire doors, smoke detectors, addressable fire alarm panels, and safety gear.',
+  keywords: ["boltek", "boltek enterprise", "boltekenterprise", "boltek shop", "buy fire extinguisher nepal", "fire door price nepal", "smoke detector nepal"],
   alternates: { canonical: 'https://boltekenterprise.com/shop' }
 };
 

@@ -6,6 +6,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Fire Safety Training & Mock Evacuation Drills Nepal | BolteK Academy",
   description: "Certified fire warden training, corporate mock fire drills, first responder workshops, evacuation planning, and emergency safety courses in Kathmandu, Nepal.",
+  keywords: ["boltek", "boltek enterprise", "boltekenterprise", "boltek academy", "fire safety training nepal", "fire warden training", "evacuation drill nepal"],
   alternates: {
     canonical: "https://boltekenterprise.com/education",
   }

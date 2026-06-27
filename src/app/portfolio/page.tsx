@@ -10,6 +10,7 @@ export const revalidate = 3600; // ISR: refresh every hour
 export const metadata: Metadata = {
   title: 'Fire Fighting System Projects & Clients in Nepal | BolteK Portfolio',
   description: 'View 20+ successfully completed fire fighting system projects across Nepal. Heavy industrial plants, commercial centers, hotels, and top hospitals (Grande, HAMS).',
+  keywords: ["boltek", "boltek enterprise", "boltekenterprise", "boltek portfolio", "fire safety projects nepal", "fire hydrant installation nepal"],
   alternates: { canonical: 'https://boltekenterprise.com/portfolio' }
 };
 

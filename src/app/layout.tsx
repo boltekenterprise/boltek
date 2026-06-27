@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "BolteK Enterprise Pvt. Ltd. | Fire Protection Company Nepal | Fire Hydrant, Sprinkler & Alarm Systems",
   description: "BolteK Enterprise Pvt. Ltd. is Nepal's leading fire protection company. We specialize in fire hydrant system design & installation, fire alarm systems, sprinkler systems, fire suppression, and fire safety training. Serving Kathmandu, Nepal and beyond.",
   keywords: [
+    "boltek",
+    "boltek enterprise",
+    "boltekenterprise",
+    "boltek nepal",
+    "boltek enterprise nepal",
     "fire protection company nepal",
     "fire hydrant system kathmandu",
     "fire alarm installation nepal",
@@ -14,7 +19,6 @@ export const metadata: Metadata = {
     "fire safety training nepal",
     "AMC fire systems nepal",
     "fire risk assessment nepal",
-    "boltekenterprise",
     "fire fighting system nepal",
     "building fire safety nepal"
   ],

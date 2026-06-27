@@ -6,6 +6,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Fire Protection Services Nepal | Hydrant, Sprinkler & Alarm System Design | BolteK",
   description: "Nepal's premium fire protection services. We design and install NFPA-compliant fire hydrant systems, automatic fire sprinklers, addressable fire alarms, clean agent gas suppression, and kitchen hood systems in Kathmandu and across Nepal.",
+  keywords: ["boltek", "boltek enterprise", "boltekenterprise", "boltek services", "fire hydrant system design", "fire alarm installation nepal", "sprinkler system nepal"],
   alternates: {
     canonical: "https://boltekenterprise.com/services",
   }
