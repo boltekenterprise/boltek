@@ -89,6 +89,77 @@ function readTime(content?: string, excerpt?: string): string {
   return `${Math.max(1, Math.round(words / 200))} min read`;
 }
 
+function renderMarkdownToHtml(md: string): string {
+  if (!md) return '';
+  let html = md;
+  
+  // Escape HTML tags to prevent cross-site issues
+  html = html
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  
+  // Headers (H3, H2, H1)
+  html = html.replace(/^### (.*?)$/gm, '<h3 class="text-xl font-bold font-heading mt-6 mb-2 text-stone-850">$1</h3>');
+  html = html.replace(/^## (.*?)$/gm, '<h2 class="text-2xl font-black font-heading mt-8 mb-4 border-l-4 border-[#6B1724] pl-3 text-stone-900">$1</h2>');
+  html = html.replace(/^# (.*?)$/gm, '<h1 class="text-3xl font-black font-heading mt-10 mb-6 text-stone-950">$1</h1>');
+  
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Horizontal rule
+  html = html.replace(/^---$/gm, '<hr class="border-stone-200 my-8" />');
+
+  // Blockquotes
+  html = html.replace(/^&gt; (.*?)$/gm, '<blockquote class="border-l-4 border-[#6B1724] bg-red-50/50 p-4 rounded-r-lg italic my-4">$1</blockquote>');
+
+  // Tables
+  const lines = html.split('\n');
+  let inTable = false;
+  const parsedLines = lines.map(line => {
+    const isRow = line.trim().startsWith('|') && line.trim().endsWith('|');
+    if (isRow) {
+      if (line.includes('---|') || line.includes(':---|') || line.includes('---:|')) {
+        return '';
+      }
+      const cells = line.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+      const cellTag = !inTable ? 'th' : 'td';
+      const cellClass = !inTable ? 'px-4 py-2 bg-stone-100 font-bold border border-stone-200 text-left' : 'px-4 py-2 border border-stone-200';
+      const row = `<tr>${cells.map(c => `<${cellTag} class="${cellClass}">${c}</${cellTag}>`).join('')}</tr>`;
+      
+      if (!inTable) {
+        inTable = true;
+        return `<div class="overflow-x-auto my-6"><table class="min-w-full border-collapse border border-stone-200 text-sm"><thead>${row}</thead><tbody>`;
+      } else {
+        return row;
+      }
+    } else {
+      if (inTable) {
+        inTable = false;
+        return '</tbody></table></div>' + '\n' + line;
+      }
+      return line;
+    }
+  });
+  html = parsedLines.filter(l => l !== '').join('\n');
+
+  // Bullet Lists
+  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-4 list-disc text-stone-600 my-1">$1</li>');
+  html = html.replace(/(<li.*?>.*?<\/li>\n?)+/g, (match) => `<ul class="my-4 space-y-1">${match}</ul>`);
+
+  // Paragraphs
+  const finalLines = html.split('\n');
+  const processed = finalLines.map(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('<') && !trimmed.endsWith('>')) {
+      return `<p class="text-stone-600 leading-relaxed text-base my-4">${trimmed}</p>`;
+    }
+    return line;
+  });
+  
+  return processed.join('\n');
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
   Safety:       'bg-red-50   text-red-700   border-red-200',
   Training:     'bg-blue-50  text-blue-700  border-blue-200',
@@ -195,7 +266,7 @@ export default async function BlogDetailPage(
                   prose-blockquote:border-[#6B1724] prose-blockquote:bg-red-50/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1
                   prose-img:rounded-xl prose-img:shadow-md
                   prose-hr:border-stone-200"
-                dangerouslySetInnerHTML={{ __html: blog.content || blog.excerpt || '' }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(blog.content || blog.excerpt || '') }}
               />
 
               <div className="mt-12 pt-8 border-t border-stone-200 flex items-center justify-between">
