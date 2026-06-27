@@ -1,4 +1,5 @@
 import JobPage from "@/admin-pages/JobPage";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function JobDashboardPage() {
-  return <JobPage />;
+  return (
+    <ProtectedRoute>
+      <JobPage />
+    </ProtectedRoute>
+  );
 }

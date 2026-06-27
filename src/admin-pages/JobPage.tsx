@@ -59,9 +59,16 @@ export default function JobPage() {
   if (isAuthorized === null) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center admin-theme">
-        <div className="text-center">
+        <div className="text-center p-6 bg-white rounded-xl border shadow-sm max-w-sm w-full mx-4">
           <Loader className="w-8 h-8 text-flame-700 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Verifying access...</p>
+          <p className="text-gray-750 font-medium mb-1">Verifying admin access...</p>
+          <p className="text-gray-500 text-xs mb-6">Checking credentials on Firestore</p>
+          <button
+            onClick={handleLogout}
+            className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 py-2 rounded text-xs font-semibold border border-stone-200 transition-colors"
+          >
+            Cancel & Logout
+          </button>
         </div>
       </div>
     );

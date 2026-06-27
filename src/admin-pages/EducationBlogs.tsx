@@ -2,11 +2,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { db } from '../lib/firebase';
-import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { BookOpen, Clock, ArrowRight, Flame } from 'lucide-react';
-import { SAMPLE_BLOGS } from '../lib/seedData';
 
 interface Blog {
   id: string;
@@ -51,7 +50,6 @@ export default function EducationBlogs({ initialBlogs }: EducationBlogsProps) {
   const [blogs, setBlogs] = useState<Blog[]>(initialBlogs || []);
   const [loading, setLoading] = useState(!initialBlogs);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [seeding, setSeeding] = useState(false);
 
   const fetchBlogs = async () => {
     try {
@@ -81,25 +79,6 @@ export default function EducationBlogs({ initialBlogs }: EducationBlogsProps) {
     }
     fetchBlogs();
   }, [initialBlogs]);
-
-  const handleSeedBlogs = async () => {
-    setSeeding(true);
-    try {
-      for (const sample of SAMPLE_BLOGS) {
-        await addDoc(collection(db, 'blogs'), {
-          ...sample,
-          createdAt: serverTimestamp(),
-        });
-      }
-      alert('Fire safety guides seeded successfully!');
-      await fetchBlogs();
-    } catch (err) {
-      console.error('Error seeding blogs:', err);
-      alert('Failed to seed blogs.');
-    } finally {
-      setSeeding(false);
-    }
-  };
 
   const groups: Record<string, Blog[]> = {};
   blogs.forEach(b => {
@@ -142,14 +121,7 @@ export default function EducationBlogs({ initialBlogs }: EducationBlogsProps) {
           ) : blogs.length === 0 ? (
             <div className="text-center py-24">
               <BookOpen className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-              <p className="text-stone-500 text-sm mb-6">No articles published yet. Check back soon.</p>
-              <button
-                onClick={handleSeedBlogs}
-                disabled={seeding}
-                className="inline-flex items-center gap-2 bg-[#6B1724] text-white px-6 py-3 rounded-full hover:bg-[#8B1E30] transition-all text-sm font-semibold shadow-md disabled:bg-stone-300"
-              >
-                {seeding ? 'Seeding...' : 'Seed Premium Fire Safety Guides'}
-              </button>
+              <p className="text-stone-500 text-sm">No articles published yet. Check back soon.</p>
             </div>
           ) : (
             <>
@@ -283,17 +255,6 @@ export default function EducationBlogs({ initialBlogs }: EducationBlogsProps) {
                 </section>
               )}
             </>
-          )}
-          {blogs.length > 0 && (
-            <div className="mt-16 text-center border-t border-stone-100 pt-8">
-              <button
-                onClick={handleSeedBlogs}
-                disabled={seeding}
-                className="text-xs font-semibold text-stone-400 hover:text-[#6B1724] transition-colors"
-              >
-                {seeding ? 'Seeding...' : 'Admin: Seed Sample Fire Safety Guides'}
-              </button>
-            </div>
           )}
         </div>
       </main>

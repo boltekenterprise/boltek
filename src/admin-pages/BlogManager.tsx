@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { addDoc, collection, serverTimestamp, getDocs, query, orderBy, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { SAMPLE_BLOGS } from '../lib/seedData';
 
 interface Blog {
   id: string;
@@ -24,6 +25,26 @@ export default function BlogManager() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedBlogs = async () => {
+    setSeeding(true);
+    try {
+      for (const sample of SAMPLE_BLOGS) {
+        await addDoc(collection(db, 'blogs'), {
+          ...sample,
+          createdAt: serverTimestamp(),
+        });
+      }
+      alert('Fire safety guides seeded successfully!');
+      fetchBlogs();
+    } catch (err) {
+      console.error('Error seeding blogs:', err);
+      alert('Failed to seed blogs.');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   useEffect(() => { fetchBlogs(); }, []);
 
@@ -96,7 +117,14 @@ export default function BlogManager() {
           <h2 className="font-heading font-bold text-2xl text-gray-900">Blog Manager</h2>
           <p className="text-gray-600 text-sm mt-1">Create, edit and remove blog posts</p>
         </div>
-        <div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSeedBlogs}
+            disabled={seeding}
+            className="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm transition-all disabled:opacity-50"
+          >
+            {seeding ? 'Seeding...' : 'Seed Sample Guides'}
+          </button>
           <button
             onClick={() => resetForm()}
             className="bg-flame-700 text-white px-3 py-2 rounded-md text-sm"
