@@ -38,6 +38,17 @@ The `/job` page provides a private admin portal for managing quotations and inte
 
 ---
 
+## Step 3.5: Configure Firestore Security Rules
+
+To prevent permission errors during admin authorization checks, you must configure the Firestore Security Rules:
+
+1. In the Firebase Console, navigate to **Firestore Database** (left sidebar).
+2. Go to the **Rules** tab at the top.
+3. Replace the default rules with the rules defined in the [firestore.rules](file:///d:/SAAS/BolteK/firestore.rules) file in the root of the project.
+4. Click **Publish** to save and apply the rules.
+
+---
+
 ## Step 4: Get Firebase Configuration
 
 1. In Firebase Console, click the **Settings** icon (⚙️) → **Project settings**

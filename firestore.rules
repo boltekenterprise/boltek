@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if the user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user has the 'admin' role
+    function isAdmin() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Rules for admin_users collection
+    match /admin_users/{userId} {
+      // Any signed-in user can read their own profile, or admins can read all
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      // Allow registration (creating own document with pending role)
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.role == 'pending';
+      
+      // Only admins can update (change roles) or delete profiles
+      allow update, delete: if isAdmin();
+    }
+
+    // Public collections (anyone can read, only admin can write)
+    match /shop_products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /portfolio_projects/{projectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admin-only collections (only admin can read and write)
+    match /quotations/{quotationId} {
+      allow read, write: if isAdmin();
+    }
+    match /internal_tasks/{taskId} {
+      allow read, write: if isAdmin();
+    }
+    match /sales_orders/{orderId} {
+      allow read, write: if isAdmin();
+    }
+    match /purchase_orders/{orderId} {
+      allow read, write: if isAdmin();
+    }
+    match /items/{itemId} {
+      allow read, write: if isAdmin();
+    }
+    match /invoices/{invoiceId} {
+      allow read, write: if isAdmin();
+    }
+    match /google_reviews/{reviewId} {
+      allow read, write: if isAdmin();
+    }
+    match /income_records/{recordId} {
+      allow read, write: if isAdmin();
+    }
+    match /expenses/{expenseId} {
+      allow read, write: if isAdmin();
+    }
+    match /payroll/{payrollId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
