@@ -13,10 +13,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/about',
     '/services',
     '/education',
-    '/education/trainings',
-    '/education/videos',
-    '/education/social',
-    '/education/blogs',
     '/shop',
     '/portfolio',
   ].map((route) => ({
@@ -34,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const data = doc.data();
       const slug = data.slug || doc.id;
       return {
-        url: `${baseUrl}/education/blogs/${slug}`,
+        url: `${baseUrl}/education/${slug}`,
         lastModified: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
         changeFrequency: 'monthly' as const,
         priority: 0.6,

@@ -128,7 +128,7 @@ export default function Trainings() {
                   )}
                 </div>
                 
-                <Link href="/education/blogs" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                <Link href="/education#articles" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
                   Read Articles <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -151,7 +151,7 @@ export default function Trainings() {
                   </div>
                 </div>
                 
-                <Link href="/education/trainings" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                <Link href="/education#trainings" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
                   Explore Training details <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -173,7 +173,7 @@ export default function Trainings() {
                   </div>
                 </div>
                 
-                <Link href="/education/videos" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
+                <Link href="/education#videos" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ED2100] hover:text-[#6B1724] transition-colors mt-4">
                   Watch Video Library <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
@@ -195,7 +195,7 @@ export default function Trainings() {
                   </div>
                 </div>
                 
-                <Link href="/education/social" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-ivory transition-colors mt-4">
+                <Link href="/education#social" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-ivory transition-colors mt-4">
                   Join Campaigns <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>

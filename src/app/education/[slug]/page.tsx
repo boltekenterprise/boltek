@@ -1,5 +1,6 @@
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from "@/lib/firebase";
+import { hardcodedBlogs } from "@/lib/hardcodedBlogs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ShareButton from "@/components/ShareButton";
@@ -21,6 +22,9 @@ interface Blog {
 }
 
 async function getBlogData(slug: string): Promise<Blog | null> {
+  const hardcoded = hardcodedBlogs.find(b => b.slug === slug);
+  if (hardcoded) return hardcoded;
+
   try {
     const q = query(collection(db, 'blogs'), where('slug', '==', slug));
     const snap = await getDocs(q);
@@ -45,12 +49,15 @@ async function getBlogData(slug: string): Promise<Blog | null> {
 }
 
 export async function generateStaticParams() {
+  const params = hardcodedBlogs.map(b => ({ slug: b.slug }));
+
   try {
     const snap = await getDocs(collection(db, 'blogs'));
-    return snap.docs.map(doc => {
+    const firebaseParams = snap.docs.map(doc => {
       const data = doc.data();
       return { slug: data.slug || doc.id };
     });
+    return [...params, ...firebaseParams];
   } catch (err) {
     console.error("Error in generateStaticParams:", err);
     return [];
@@ -119,8 +126,8 @@ function renderMarkdownToHtml(md: string): string {
   html = html.replace(/^# (.*?)$/gm, '<h1 class="text-4xl font-black font-heading mt-14 mb-8 text-stone-950">$1</h1>');
   
   // 5. Bold & Italic
-  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="font-bold italic text-stone-900">$1</strong>');
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-stone-900">$1</strong>');
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="font-bold italic text-stone-900 block mt-4 mb-1">$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-stone-900 block mt-4 mb-1">$1</strong>');
   html = html.replace(/\*(.*?)\*/g, '<em class="italic text-stone-700">$1</em>');
   
   // 6. Horizontal rule
@@ -159,9 +166,12 @@ function renderMarkdownToHtml(md: string): string {
   });
   html = parsedLines.filter(l => l !== '').join('\n');
 
-  // 9. Bullet Lists (Graceful spacing)
-  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-6 pl-2 list-disc marker:text-[#6B1724] text-stone-600 my-2 leading-relaxed">$1</li>');
-  html = html.replace(/(<li.*?>.*?<\/li>\n?)+/g, (match) => `<ul class="my-6 space-y-2 bg-stone-50/50 p-6 rounded-2xl border border-stone-100">${match}</ul>`);
+  // 9. Lists (Ordered and Unordered)
+  html = html.replace(/^(\d+)\.\s+(.*?)$/gm, '<li class="ml-6 pl-2 list-decimal marker:text-[#6B1724] marker:font-bold text-stone-600 my-2 leading-relaxed" data-type="ol">$2</li>');
+  html = html.replace(/^[\-\*]\s+(.*?)$/gm, '<li class="ml-6 pl-2 list-disc marker:text-[#6B1724] text-stone-600 my-2 leading-relaxed" data-type="ul">$1</li>');
+  
+  html = html.replace(/(<li[^>]*data-type="ol".*?>.*?<\/li>\n?)+/g, (match) => `<ol class="my-6 space-y-2 bg-stone-50/50 p-6 rounded-2xl border border-stone-100">${match}</ol>`);
+  html = html.replace(/(<li[^>]*data-type="ul".*?>.*?<\/li>\n?)+/g, (match) => `<ul class="my-6 space-y-2 bg-stone-50/50 p-6 rounded-2xl border border-stone-100">${match}</ul>`);
 
   // 10. Paragraphs (Split by double newline for accurate plain text rendering)
   const blocks = html.split(/\n\n+/);
